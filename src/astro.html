@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Astro Planner – Seestar‑Tuned</title>
+    <title>Astro Planner – Seestar-Tuned</title>
     <style>
         body { background: #0d1117; color: #c9d1d9; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; justify-content: center; padding: 20px; }
         .container { width: 100%; max-width: 1400px; background: #161b22; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); padding-bottom: 20px; }
@@ -31,18 +31,85 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1 style="font-size: 1.2rem; margin:0;">Astro Forecast – Seestar‑Tuned</h1>
-        <small style="color: #8b949e;">Auto‑Location • Full NGC (mag ≤ 12.5, size ≥ 2′) • Real Altitude Visibility</small>
+        <h1 style="font-size: 1.2rem; margin:0;">Astro Forecast – Seestar-Tuned</h1>
+        <small style="color: #8b949e;">Auto-Location • Full NGC (mag ≤ 12.5, size ≥ 2′) • Real Altitude Visibility</small>
+    </div>
+
+    <!-- Manual Location Controls -->
+    <div style="padding:10px; text-align:center; border-bottom:1px solid #30363d;">
+        <input id="latInput" type="number" step="0.01" placeholder="Latitude"
+               style="width:120px; margin-right:5px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; padding:5px; border-radius:5px;">
+        <input id="lonInput" type="number" step="0.01" placeholder="Longitude"
+               style="width:120px; margin-right:5px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; padding:5px; border-radius:5px;">
+        <button onclick="setManualLocation()"
+                style="padding:6px 10px; background:#238636; border:none; border-radius:5px; color:white; cursor:pointer;">
+            Set Location
+        </button>
+        <button onclick="retryAutoLocation()"
+                style="padding:6px 10px; background:#21262d; border:1px solid #30363d; border-radius:5px; color:#c9d1d9; cursor:pointer; margin-left:5px;">
+            Retry GPS
+        </button>
     </div>
 
     <div id="status">Requesting device location…</div>
-
     <div id="night-columns" class="night-columns"></div>
-
     <div id="bottom-summary" class="bottom-summary" style="display:none;"></div>
 </div>
 
 <script>
+// ---------- UI Reset ----------
+function resetUI() {
+    document.getElementById("night-columns").innerHTML = "";
+    document.getElementById("bottom-summary").innerHTML = "";
+    document.getElementById("bottom-summary").style.display = "none";
+    document.getElementById("status").style.display = "block";
+    document.getElementById("status").innerText = "Loading data...";
+}
+
+// ---------- Manual / Retry ----------
+function setManualLocation() {
+    const lat = parseFloat(document.getElementById("latInput").value);
+    const lon = parseFloat(document.getElementById("lonInput").value);
+
+    if (isNaN(lat) || isNaN(lon)) {
+        alert("Enter valid latitude and longitude.");
+        return;
+    }
+
+    localStorage.setItem("astro_lat", lat);
+    localStorage.setItem("astro_lon", lon);
+
+    resetUI();
+    loadAstro(lat, lon);
+}
+
+function retryAutoLocation() {
+    resetUI();
+    startWithLocation();
+}
+
+// ---------- Location Bootstrap ----------
+function startWithLocation() {
+    const savedLat = localStorage.getItem("astro_lat");
+    const savedLon = localStorage.getItem("astro_lon");
+
+    if (savedLat && savedLon) {
+        loadAstro(parseFloat(savedLat), parseFloat(savedLon));
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        pos => loadAstro(pos.coords.latitude, pos.coords.longitude),
+        () => {
+            document.getElementById("status").innerHTML =
+                "Location blocked. Enter coordinates manually or retry GPS.<br>Using fallback: London, KY";
+            loadAstro(37.13, -84.08);
+        }
+    );
+}
+
+
+
 // ---------- Utility formatting ----------
 function formatTwilight(timeStr) {
     if (!timeStr) return "N/A";
@@ -54,14 +121,14 @@ function getMoonEmoji(date) {
     const now = date.getTime() / 1000;
     const new_moon = new Date("1970-01-07T20:35:00Z").getTime() / 1000;
     const phase = ((now - new_moon) % lp) / lp;
-    if (phase < 0.03 || phase > 0.97) return "🌑";
-    if (phase < 0.22) return "🌒";
-    if (phase < 0.28) return "🌓";
-    if (phase < 0.47) return "🌔";
-    if (phase < 0.53) return "🌕";
-    if (phase < 0.72) return "🌖";
-    if (phase < 0.78) return "🌗";
-    return "🌘";
+    if (phase < 0.03 || phase > 0.97) return "(New Moon) 🌑  ";
+    if (phase < 0.22) return "(Waxing Crescent) 🌒  ";
+    if (phase < 0.28) return "(First Quarter) 🌓  ";
+    if (phase < 0.47) return "(Waxing Gibbous) 🌔  ";
+    if (phase < 0.53) return "(Full Moon) 🌕  ";
+    if (phase < 0.72) return "(Waning Gibbous) 🌖  ";
+    if (phase < 0.78) return "(Last Quarter) 🌗  ";
+    return "(Waning Crescent) 🌘  ";
 }
 
 function smokeImpact(pm25) {
@@ -146,13 +213,20 @@ function buildTelescopiusLink(name) {
 
 // ---------- Location bootstrap ----------
 function startWithLocation() {
+    const savedLat = localStorage.getItem("astro_lat");
+    const savedLon = localStorage.getItem("astro_lon");
+
+    if (savedLat && savedLon) {
+        loadAstro(parseFloat(savedLat), parseFloat(savedLon));
+        return;
+    }
+
     navigator.geolocation.getCurrentPosition(
         pos => loadAstro(pos.coords.latitude, pos.coords.longitude),
         () => {
-            document.getElementById("status").innerHTML =
-                "Location denied — using fallback: London, KY";
-            loadAstro(37.13, -84.08);
-        }
+    document.getElementById("status").innerHTML =
+        "Location blocked. Enter coordinates manually or retry GPS.";
+}
     );
 }
 
@@ -292,14 +366,21 @@ async function loadAstro(lat, lon) {
                     }
 
                     if (altDeg >= threshold) {
-                        visibleObjects.push({
-                            name: obj.name,
-                            altDeg,
-                            haDeg,
-                            mag: obj.mag,
-                            type: obj.type
-                        });
-                    }
+    const url =
+        obj.wikipedia_url ||
+        obj.simbad_url ||
+        obj.telescopius_search_url ||
+        buildTelescopiusLink(obj.name);
+
+    visibleObjects.push({
+        name: obj.name,
+        altDeg,
+        haDeg,
+        mag: obj.mag,
+        type: obj.type,
+        link: url
+    });
+}
                 });
 
                 let bestObject = null;
@@ -327,7 +408,7 @@ async function loadAstro(lat, lon) {
                 row.className = `item ${isClear ? 'clear-slot' : ''}`;
 
                 if (isClear && bestObject) {
-                    row.href = buildTelescopiusLink(bestObject.name);
+                    row.href = bestObject.link;
                     row.target = "_blank";
                 }
 
@@ -394,7 +475,13 @@ async function loadAstro(lat, lon) {
                         hour12: false
                     });
                     const altRounded = Math.round(obj.maxAlt);
-                    const link = buildTelescopiusLink(obj.name);
+                    const catalogObj = OBJECTS.find(o => o.name === obj.name);
+
+const link =
+    catalogObj?.wikipedia_url ||
+    catalogObj?.simbad_url ||
+    catalogObj?.telescopius_search_url ||
+    buildTelescopiusLink(obj.name);
                     html += `
                         <div class="night-summary-object">
                             <a href="${link}" target="_blank">${obj.name}</a>
