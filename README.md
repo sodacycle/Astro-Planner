@@ -8,33 +8,33 @@ It uses your device location, precise astronomical math, weather and smoke data,
 ## Features
 
 ### Real Astronomical Calculations
-- **Julian Date**, **GMST**, **LST**, **Hour Angle**, and **Altitude** computed in the browser.  
-- **Transit scoring** favors objects near transit (hour angle ≈ 0).  
-- No external astronomy libraries required.
+- **Julian Date**, **GMST**, **LST**, **Hour Angle**, and **Altitude** computed directly in the browser  
+- **Transit scoring** favors objects near transit (hour angle ≈ 0)  
+- No external astronomy libraries required  
 
 ### Seestar Optimized Catalog
-- Catalog filtered for the **ZWO Seestar S50** capture profile.  
-- Default limits: **integrated magnitude ≤ 12.5** and **angular size ≥ 2 arcmin**.  
-- Includes galaxies, nebulae, clusters, and supernova remnants with **RA**, **Dec**, **mag**, **size**, and **type** fields.
+- Catalog filtered for the **ZWO Seestar S50**  
+- Default limits: **integrated magnitude ≤ 12.5**, **angular size ≥ 2 arcmin**  
+- Includes galaxies, nebulae, clusters, and supernova remnants with **RA**, **Dec**, **mag**, **size**, and **type**  
 
 ### Adaptive Altitude Thresholds
-- **Before midnight**: altitude ≥ **30°**  
-- **00:00–02:00**: altitude ≥ **25°**  
-- **After 02:00**: altitude ≥ **20°**
+- Before midnight: **≥ 30°**  
+- 00:00–02:00: **≥ 25°**  
+- After 02:00: **≥ 20°**  
 
-### Transit Aware Selection
-- When multiple objects meet thresholds:
-  1. Highest altitude wins.  
-  2. If top altitudes are within **20°**, the object closest to transit is chosen.
+### Transit‑Aware Selection
+When multiple objects qualify:
+1. Highest altitude wins  
+2. If within **20°**, the object closest to transit is chosen  
 
 ### Weather and Smoke Integration
-- Hourly evaluation for **cloud cover**, **relative humidity**, and **PM2.5**.  
-- Hours labeled **CLEAR** or **POOR** based on sky and smoke conditions.
+- Hourly cloud cover, humidity, and PM2.5  
+- Hours labeled **CLEAR** or **POOR**  
 
 ### UI Behavior
-- **Hour columns** show local time, cloud/humidity/smoke, and CLEAR/POOR rating.  
-- **No object lists inside hour columns**.  
-- **Bottom summary grouped by night** shows dark window and each object that reaches meaningful altitude with **Max Altitude** and **Time of Max Altitude** in 24‑hour format.
+- Hour columns show local time + sky conditions  
+- No object lists inside hour columns  
+- Bottom summary shows dark window + each object’s **Max Altitude** and **Time of Max Altitude** (24‑hour format)
 
 ---
 
@@ -42,78 +42,129 @@ It uses your device location, precise astronomical math, weather and smoke data,
 
 | File | Description |
 |------|-------------|
-| `astro.html` | Main application with full astronomical engine and UI |
-| `seestar_catalog.json` | Seestar optimized deep sky catalog (mag ≤ 12.5, size ≥ 2 arcmin) |
-| `astro_server.sh` | Helper script to run a local static server and open the dashboard |
+| `astro.html` | Main application with astronomical engine and UI |
+| `seestar_catalog.json` | Seestar‑optimized deep sky catalog |
+| `scripts/run-astro-planner.bat` | Windows launcher |
+| `scripts/astro_server.sh` | Linux/macOS launcher |
 
 ---
 
 ## How It Works
 
-1. Browser requests device location.  
-2. Loads weather and air quality data for the location.  
-3. Loads the Seestar optimized catalog.  
-4. Computes altitude for every catalog object for each hour of the night.  
-5. Applies adaptive altitude thresholds per hour.  
-6. Applies transit aware ranking when multiple objects qualify.  
-7. Marks each hour CLEAR or POOR.  
-8. Builds nightly summaries with max altitude and time of max altitude.
+1. Browser requests device location  
+2. Loads weather + air quality data  
+3. Loads Seestar catalog  
+4. Computes altitude for each object hourly  
+5. Applies adaptive altitude thresholds  
+6. Applies transit‑aware ranking  
+7. Marks each hour CLEAR or POOR  
+8. Builds nightly summaries  
 
-Example nightly summary line:
-```M51 Galaxy — Max Alt: 78° at 01:00```
+Example summary: `M51 Galaxy — Max Alt: 78° at 01:00`
 
 ---
 
-## Getting Started
+# Getting Started
 
-1. Clone the repository.  
-2. Place `astro.html` and `seestar_catalog.json` in the project root.  
-3. Create the helper script `astro_server.sh` as shown below.  
-4. Make the script executable and run it.  
-5. Open the dashboard in your browser.
-```bash
-### Create the helper script
+Astro Planner runs entirely locally using a lightweight Python web server.  
+Choose the instructions for your operating system below.
 
-Create a file named `serve.sh` in the project root with the following content:
+---
 
-# Create the script file
-cat > serve.sh <<'EOF'
-#!/bin/bash
-# Navigate to the folder containing your HTML file
-cd /home/$USER/Documents
-[astro_server.sh](https://github.com/user-attachments/files/26259658/astro_server.sh)
+# 🪟 Windows Setup
 
-# Start python server in background on port 8000
-python -m http.server 8000 &
+### 1. Install Python 3
+Download from:  
+https://www.python.org/downloads/windows/  
+Check **“Add Python to PATH”** during installation.
 
-# Wait a second for it to initialize
-sleep 3
-[astro_server.sh](https://github.com/user-attachments/files/26259662/astro_server.sh)
+---
 
-# Open your default browser to the dashboard
-xdg-open http://localhost:8000/astro.html
-EOF
+### 2. Download or clone the repository
+Your folder should contain:
+`src/`
+`scripts/`
+`README.md`
+`LICENSE`
 
-# Make it executable
-chmod +x serve.sh
+---
 
-# Run the script
-./astro_server.sh
+### 3. Run the Windows launcher
+Double‑click: `scripts/run-astro-planner.bat`
 
-```
-#Notes
+This will:
+- Start a local Python server  
+- Open your browser to the dashboard  
+- Load `astro.html` automatically  
 
-   Replace /home/$USER/Documents with the actual path where astro.html or lives if different.
+---
 
-   On macOS use open instead of xdg-open.
+### 4. Manual method (optional)
 
-   If Python 3 is invoked with python3 on your system, replace python -m http.server 8000 with python3 -m http.server 8000.
+`cd src`
+`python -m http.server 8000`
 
-#Catalog Schema
+Then open: `http://localhost:8000/astro.html`
 
-The seestar_catalog.json file must follow this schema:
+---
+
+# 🐧 Linux / macOS Setup
+
+### 1. Verify Python 3
+Check with: `python3 --version`
+
+---
+
+### 2. Download or clone the repository
+
+---
+
+### 3. Use the included helper script
+
+Make it executable:
+
+`chmod +x scripts/astro_server.sh`
+
+Run it:
+
+`./scripts/astro_server.sh`
+
+This will:
+- Start a Python server  
+- Open your default browser  
+
+---
+
+### 4. Manual method (optional)
+
+`cd src`
+`python3 -m http.server 8000`
+
+Then open:
+
+`http://localhost:8000/astro.html`
+
+
+---
+
+# 🍏 macOS Notes
+
+If your system uses `python` instead of `python3`:
+
+`python -m http.server 8000`
+
+
+To open the browser manually:
+
+`open http://localhost:8000/astro.html`
+
+---
+
+# Catalog Schema
+
+The `seestar_catalog.json` file must follow this schema:
+
 ```json
-
 [
   {
     "name": "Object Name",
@@ -126,16 +177,17 @@ The seestar_catalog.json file must follow this schema:
   }
 ]
 ```
-   ra is in hours.
+  `ra` is in hours
 
-   dec is in degrees.
+   `dec` is in degrees
 
-   mag is integrated magnitude.
+   `mag` is integrated magnitude
 
-   size is angular size in arcminutes.
+   `size` is angular size in arcminutes
 
-Adjust ```MAG_LIMIT``` and ```SIZE_LIMIT_ARCMIN``` in the script to tune recommendations for different gear or exposure strategies.
+Adjust `MAG_LIMIT` and `SIZE_LIMIT_ARCMIN` in the script to tune recommendations.
 
-[astro.html](https://github.com/user-attachments/files/26259664/astro.html)
-[seestar_catalog.json](https://github.com/user-attachments/files/26259685/seestar_catalog.json)
-[astro_server.sh](https://github.com/user-attachments/files/26259812/astro_server.sh)
+
+
+
+
