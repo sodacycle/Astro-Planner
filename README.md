@@ -13,7 +13,7 @@ It uses your device location, precise astronomical math, weather and smoke data,
 - No external astronomy libraries required  
 
 ### Seestar Optimized Catalog
-- Catalog filtered for the **ZWO Seestar S50**  
+- Catalog filtered for the **ZWO Seestar Telescopes**  
 - Default limits: **integrated magnitude ≤ 12.5**, **angular size ≥ 2 arcmin**  
 - Includes galaxies, nebulae, clusters, and supernova remnants with **RA**, **Dec**, **mag**, **size**, and **type**  
 
