@@ -10,8 +10,8 @@ cd /d "%SCRIPT_DIR%\.."
 REM Move into the src folder where astro.html lives
 cd src
 
-REM Start Python server on port 8000
-start "" python -m http.server 8000
+REM Start Python server in background on port 8000 (no new window)
+start /b python -m http.server 8000
 
 REM Wait a moment for the server to start
 timeout /t 2 >nul
