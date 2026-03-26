@@ -136,6 +136,6 @@ The seestar_catalog.json file must follow this schema:
 
 Adjust ```MAG_LIMIT``` and ```SIZE_LIMIT_ARCMIN``` in the script to tune recommendations for different gear or exposure strategies.
 
-[astro_server.sh](https://github.com/user-attachments/files/26259681/astro_server.sh)
 [astro.html](https://github.com/user-attachments/files/26259664/astro.html)
 [seestar_catalog.json](https://github.com/user-attachments/files/26259685/seestar_catalog.json)
+[astro_server.sh](https://github.com/user-attachments/files/26259812/astro_server.sh)
