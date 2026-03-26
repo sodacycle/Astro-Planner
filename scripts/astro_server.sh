@@ -1,12 +1,25 @@
 #!/bin/bash
-# Navigate to the folder containing your HTML file
-cd /home/$USER/Documents
 
-# Start python server in background (port 8000)
-python -m http.server 8000 &
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Wait a second for it to initialize
-sleep 3
+# Navigate to the project root (one level up from scripts/)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Open your default browser to the dashboard
-xdg-open http://localhost:8000/astro.html
+# Navigate to the src folder where astro.html lives
+cd "$PROJECT_ROOT/src" || exit 1
+
+# Start python server in background on port 8000
+python3 -m http.server 8000 &
+
+# Wait a moment for the server to start
+sleep 2
+
+# Open the default browser to the dashboard
+if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open http://localhost:8000/astro.html
+elif command -v open >/dev/null 2>&1; then
+    open http://localhost:8000/astro.html   # macOS fallback
+else
+    echo "Open your browser and go to: http://localhost:8000/astro.html"
+fi
