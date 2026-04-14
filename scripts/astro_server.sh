@@ -1,25 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+echo "🔭 Astro Planner – Seestar"
 
-# Navigate to the project root (one level up from scripts/)
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-
-# Navigate to the src folder where astro.html lives
-cd "$PROJECT_ROOT/src" || exit 1
-
-# Start python server in background on port 8000
-python3 -m http.server 8000 &
-
-# Wait a moment for the server to start
-sleep 2
-
-# Open the default browser to the dashboard
-if command -v xdg-open >/dev/null 2>&1; then
-    xdg-open http://localhost:8000/astro.html
-elif command -v open >/dev/null 2>&1; then
-    open http://localhost:8000/astro.html   # macOS fallback
-else
-    echo "Open your browser and go to: http://localhost:8000/astro.html"
+# Check Node.js
+if ! command -v node &>/dev/null; then
+    echo "❌ Node.js not found. Install from https://nodejs.org"
+    exit 1
 fi
+
+# Move to project root (parent of scripts/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# Install if needed
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing dependencies..."
+    npm install
+fi
+
+echo "🚀 Launching..."
+npm start

@@ -4,283 +4,526 @@
     <meta charset="UTF-8">
     <title>Astro Planner – Seestar-Tuned</title>
     <style>
-        body { background: #0d1117; color: #c9d1d9; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 1400px; background: #161b22; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); padding-bottom: 20px; }
-        .header { background: #21262d; padding: 15px; text-align: center; border-bottom: 1px solid #30363d; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #0d1117;
+            color: #c9d1d9;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            padding-bottom: 20px;
+        }
+
+        .header {
+            background: #21262d;
+            padding: 14px 20px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-left h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .header-left small { color: #8b949e; font-size: 0.75rem; }
+
+        .cache-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #8b949e;
+            white-space: nowrap;
+        }
+        .cache-badge.fresh { border-color: #238636; color: #3fb950; }
+        .cache-badge.stale { border-color: #d29922; color: #e3b341; }
+
+        /* Location bar */
+        .location-bar {
+            padding: 10px 15px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .location-bar input {
+            width: 110px;
+            background: #0d1117;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+        .location-bar input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+        .btn {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: #238636; color: white; }
+        .btn-secondary { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; }
+        .btn-refresh { background: #1f6feb; color: white; }
+        .btn-danger { background: #da3633; color: white; }
+
+        #location-label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-left: 4px;
+        }
+
+        /* Columns */
         .night-columns { display: flex; gap: 10px; padding: 15px; }
-        .night-column { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; overflow-y: auto; max-height: 80vh; }
-        .day-banner { background: #0d1117; padding: 10px 20px; font-size: 0.8rem; font-weight: bold; color: #58a6ff; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 5; text-align: center; }
-        .item { display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #21262d; align-items: center; text-decoration: none; color: inherit; transition: 0.2s; }
-        .item.clear-slot:hover { background: #1c2128; cursor: pointer; border-left: 4px solid #238636; }
-        .rating { padding: 4px 8px; border-radius: 5px; font-size: 0.75rem; font-weight: bold; }
+        .night-column {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            overflow-y: auto;
+            max-height: 75vh;
+        }
+
+        .day-banner {
+            background: #0d1117;
+            padding: 10px 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #58a6ff;
+            border-bottom: 1px solid #30363d;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            text-align: center;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 11px 20px;
+            border-bottom: 1px solid #21262d;
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s;
+        }
+        .item.clear-slot { cursor: pointer; }
+        .item.clear-slot:hover { background: #1c2128; border-left: 3px solid #238636; }
+
+        .rating {
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
         .exc { background: #238636; color: white; }
-        .poor { background: #da3633; color: white; }
+        .poor { background: #6e4040; color: #ffaaaa; }
+
         .target-hint { font-size: 0.7rem; color: #8b949e; display: block; margin-top: 2px; }
-        #status { padding: 30px; text-align: center; color: #8b949e; }
-        .bottom-summary { border-top: 1px solid #30363d; margin: 0 15px 15px 15px; padding: 15px 10px 5px 10px; font-size: 0.8rem; }
+
+        /* Status */
+        #status { padding: 40px; text-align: center; color: #8b949e; font-size: 0.9rem; }
+        #status .spinner {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 2px solid #30363d;
+            border-top-color: #58a6ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Bottom summary */
+        .bottom-summary {
+            border-top: 1px solid #30363d;
+            margin: 0 15px 10px 15px;
+            padding: 15px 10px 5px 10px;
+            font-size: 0.8rem;
+        }
         .bottom-summary h2 { font-size: 0.9rem; margin-bottom: 10px; color: #58a6ff; }
         .night-summary { padding: 8px 0; border-bottom: 1px solid #21262d; }
         .night-summary:last-child { border-bottom: none; }
         .night-summary-date { font-weight: bold; margin-bottom: 4px; }
         .night-summary-dark { color: #8b949e; margin-bottom: 4px; }
         .night-summary-object { margin-left: 10px; }
-        .night-summary-object a { color: #58a6ff; text-decoration: none; }
+        .night-summary-object a {
+            color: #58a6ff;
+            text-decoration: none;
+            cursor: pointer;
+        }
         .night-summary-object a:hover { text-decoration: underline; }
+
+        /* Notification toast */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 0.82rem;
+            color: #c9d1d9;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 9999;
+            max-width: 320px;
+        }
+        #toast.show { opacity: 1; }
+        #toast.toast-success { border-color: #238636; }
+        #toast.toast-info { border-color: #1f6feb; }
+        #toast.toast-warn { border-color: #d29922; }
     </style>
 </head>
 <body>
 <div class="container">
+    <!-- Header -->
     <div class="header">
-        <h1 style="font-size: 1.2rem; margin:0;">Astro Forecast – Seestar-Tuned</h1>
-        <small style="color: #8b949e;">Auto-Location • Full NGC (mag ≤ 12.5, size ≥ 2′) • Real Altitude Visibility</small>
+        <div class="header-left">
+            <h1>🔭 Astro Planner – Seestar-Tuned</h1>
+            <small>Auto-Location • Seestar Catalog (mag ≤ 12.5, size ≥ 2′) • Real Altitude Visibility</small>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span id="cache-badge" class="cache-badge">Weather: —</span>
+            <button class="btn btn-refresh" onclick="manualRefreshWeather()">⟳ Refresh Weather</button>
+        </div>
     </div>
 
-    <!-- Manual Location Controls -->
-    <div style="padding:10px; text-align:center; border-bottom:1px solid #30363d;">
-        <input id="latInput" type="number" step="0.01" placeholder="Latitude"
-               style="width:120px; margin-right:5px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; padding:5px; border-radius:5px;">
-        <input id="lonInput" type="number" step="0.01" placeholder="Longitude"
-               style="width:120px; margin-right:5px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; padding:5px; border-radius:5px;">
-        <button onclick="setManualLocation()"
-                style="padding:6px 10px; background:#238636; border:none; border-radius:5px; color:white; cursor:pointer;">
-            Set Location
-        </button>
-        <button onclick="retryAutoLocation()"
-                style="padding:6px 10px; background:#21262d; border:1px solid #30363d; border-radius:5px; color:#c9d1d9; cursor:pointer; margin-left:5px;">
-            Retry GPS
-        </button>
+    <!-- Location Bar -->
+    <div class="location-bar">
+        <input id="latInput" type="number" step="0.01" placeholder="Latitude">
+        <input id="lonInput" type="number" step="0.01" placeholder="Longitude">
+        <button class="btn btn-primary" onclick="setManualLocation()">Set Location</button>
+        <button class="btn btn-secondary" onclick="retryAutoLocation()">⌖ GPS</button>
+        <button class="btn btn-danger" onclick="clearLocation()" title="Forget saved location">✕ Clear</button>
+        <span id="location-label"></span>
     </div>
 
-    <div id="status">Requesting device location…</div>
+    <div id="status"><span class="spinner"></span> Requesting device location…</div>
     <div id="night-columns" class="night-columns"></div>
     <div id="bottom-summary" class="bottom-summary" style="display:none;"></div>
 </div>
 
+<div id="toast"></div>
+
 <script>
-// ---------- UI Reset ----------
-function resetUI() {
-    document.getElementById("night-columns").innerHTML = "";
-    document.getElementById("bottom-summary").innerHTML = "";
-    document.getElementById("bottom-summary").style.display = "none";
-    document.getElementById("status").style.display = "block";
-    document.getElementById("status").innerText = "Loading data...";
+// ─── Toast ─────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'info', duration = 4000) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `show toast-${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, duration);
 }
 
-// ---------- Manual / Retry ----------
-function setManualLocation() {
-    const lat = parseFloat(document.getElementById("latInput").value);
-    const lon = parseFloat(document.getElementById("lonInput").value);
+// ─── Electron API helper (falls back for browser testing) ──────────────────
+const api = window.electronAPI || null;
 
-    if (isNaN(lat) || isNaN(lon)) {
-        alert("Enter valid latitude and longitude.");
+function openLink(url) {
+    if (api) {
+        api.openExternal(url);
+    } else {
+        window.open(url, '_blank');
+    }
+}
+
+// ─── Cache badge ───────────────────────────────────────────────────────────
+async function updateCacheBadge() {
+    if (!api) return;
+    const status = await api.cacheStatus();
+    const badge = document.getElementById('cache-badge');
+    if (!status.exists) {
+        badge.textContent = 'Weather: Not cached';
+        badge.className = 'cache-badge stale';
         return;
     }
-
-    localStorage.setItem("astro_lat", lat);
-    localStorage.setItem("astro_lon", lon);
-
-    resetUI();
-    loadAstro(lat, lon);
-}
-
-function retryAutoLocation() {
-    resetUI();
-    startWithLocation();
-}
-
-// ---------- Location Bootstrap ----------
-function startWithLocation() {
-    const savedLat = localStorage.getItem("astro_lat");
-    const savedLon = localStorage.getItem("astro_lon");
-
-    if (savedLat && savedLon) {
-        loadAstro(parseFloat(savedLat), parseFloat(savedLon));
-        return;
+    const time = new Date(status.fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (status.isToday) {
+        badge.textContent = `Weather: Today ${time}`;
+        badge.className = 'cache-badge fresh';
+    } else {
+        badge.textContent = `Weather: Stale (${status.date})`;
+        badge.className = 'cache-badge stale';
     }
-
-    navigator.geolocation.getCurrentPosition(
-        pos => loadAstro(pos.coords.latitude, pos.coords.longitude),
-        () => {
-            document.getElementById("status").innerHTML =
-                "Location blocked. Enter coordinates manually or retry GPS.<br>Using fallback: London, KY";
-            loadAstro(37.13, -84.08);
-        }
-    );
 }
 
+// ─── Astronomical math ─────────────────────────────────────────────────────
+function deg2rad(d) { return d * Math.PI / 180; }
+function rad2deg(r) { return r * 180 / Math.PI; }
+function normalizeDeg(d) { d = d % 360; return d < 0 ? d + 360 : d; }
 
-
-// ---------- Utility formatting ----------
-function formatTwilight(timeStr) {
-    if (!timeStr) return "N/A";
-    return timeStr.replace(/:\d{2}\s/, ' ');
+function toJulianDate(date) {
+    return date.getTime() / 86400000 + 2440587.5;
 }
 
+function gmst(jd) {
+    const T = (jd - 2451545.0) / 36525.0;
+    let g = 280.46061837 + 360.98564736629 * (jd - 2451545.0)
+              + 0.000387933 * T * T - (T * T * T) / 38710000.0;
+    return normalizeDeg(g);
+}
+
+function lst(gmstDeg, longitudeDeg) {
+    return normalizeDeg(gmstDeg + longitudeDeg);
+}
+
+function altitude(raHours, decDeg, latDeg, lstDeg) {
+    const raDeg = raHours * 15;
+    const haDeg = normalizeDeg(lstDeg - raDeg);
+    const haRad = deg2rad(haDeg);
+    const decRad = deg2rad(decDeg);
+    const latRad = deg2rad(latDeg);
+    const sinAlt = Math.sin(decRad) * Math.sin(latRad) +
+                   Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
+    return { altDeg: rad2deg(Math.asin(sinAlt)), haDeg };
+}
+
+function transitScore(haDeg) {
+    return Math.min(Math.abs(haDeg), 360 - Math.abs(haDeg));
+}
+
+function altitudeThreshold(hour) {
+    if (hour >= 20 || hour < 0) return 30;
+    if (hour < 2) return 25;
+    return 20;
+}
+
+// ─── Catalog & filters ─────────────────────────────────────────────────────
+const MAG_LIMIT       = 12.5;
+const SIZE_LIMIT_ARCMIN = 2;
+
+function isSeestarFriendly(obj) {
+    if (obj.mag  != null && obj.mag  > MAG_LIMIT)        return false;
+    if (obj.size != null && obj.size < SIZE_LIMIT_ARCMIN) return false;
+    return true;
+}
+
+function buildTelescopiusLink(name) {
+    return `https://telescopius.com/deep-sky/search?query=${encodeURIComponent(name)}`;
+}
+
+// ─── Smoke helper ──────────────────────────────────────────────────────────
+function smokeImpact(pm25) {
+    if (pm25 < 15) return { ok: true,  label: "Low Smoke" };
+    if (pm25 < 35) return { ok: true,  label: "Moderate Smoke" };
+    if (pm25 < 55) return { ok: false, label: "Heavy Smoke" };
+    return          { ok: false, label: "Severe Smoke" };
+}
+
+// ─── Moon phase ────────────────────────────────────────────────────────────
 function getMoonEmoji(date) {
     const lp = 2551443;
     const now = date.getTime() / 1000;
     const new_moon = new Date("1970-01-07T20:35:00Z").getTime() / 1000;
     const phase = ((now - new_moon) % lp) / lp;
-    if (phase < 0.03 || phase > 0.97) return "(New Moon) 🌑  ";
-    if (phase < 0.22) return "(Waxing Crescent) 🌒  ";
-    if (phase < 0.28) return "(First Quarter) 🌓  ";
-    if (phase < 0.47) return "(Waxing Gibbous) 🌔  ";
-    if (phase < 0.53) return "(Full Moon) 🌕  ";
-    if (phase < 0.72) return "(Waning Gibbous) 🌖  ";
-    if (phase < 0.78) return "(Last Quarter) 🌗  ";
-    return "(Waning Crescent) 🌘  ";
+    if (phase < 0.03 || phase > 0.97) return "🌑 New Moon";
+    if (phase < 0.22) return "🌒 Waxing Crescent";
+    if (phase < 0.28) return "🌓 First Quarter";
+    if (phase < 0.47) return "🌔 Waxing Gibbous";
+    if (phase < 0.53) return "🌕 Full Moon";
+    if (phase < 0.72) return "🌖 Waning Gibbous";
+    if (phase < 0.78) return "🌗 Last Quarter";
+    return "🌘 Waning Crescent";
 }
 
-function smokeImpact(pm25) {
-    if (pm25 < 15) return { ok: true, label: "Low Smoke" };
-    if (pm25 < 35) return { ok: true, label: "Moderate Smoke" };
-    if (pm25 < 55) return { ok: false, label: "Heavy Smoke" };
-    return { ok: false, label: "Severe Smoke" };
+function formatTwilight(str) {
+    if (!str) return "N/A";
+    return str.replace(/:\d{2}\s/, ' ');
 }
 
-// ---------- Astronomical math ----------
-function deg2rad(d) { return d * Math.PI / 180; }
-function rad2deg(r) { return r * 180 / Math.PI; }
-function normalizeDeg(d) {
-    d = d % 360;
-    return d < 0 ? d + 360 : d;
+// ─── UI state ──────────────────────────────────────────────────────────────
+function resetUI(message = "Loading data…") {
+    document.getElementById("night-columns").innerHTML = "";
+    document.getElementById("bottom-summary").innerHTML = "";
+    document.getElementById("bottom-summary").style.display = "none";
+    const status = document.getElementById("status");
+    status.style.display = "block";
+    status.innerHTML = `<span class="spinner"></span> ${message}`;
 }
 
-// Julian Date from JS Date (UTC)
-function toJulianDate(date) {
-    const time = date.getTime();
-    return time / 86400000 + 2440587.5;
-}
+// ─── Location handling ─────────────────────────────────────────────────────
+let currentLat = null, currentLon = null;
 
-// GMST in degrees
-function gmst(jd) {
-    const T = (jd - 2451545.0) / 36525.0;
-    let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0)
-               + 0.000387933 * T * T - (T * T * T) / 38710000.0;
-    return normalizeDeg(gmst);
-}
-
-// Local Sidereal Time in degrees
-function lst(gmstDeg, longitudeDeg) {
-    return normalizeDeg(gmstDeg + longitudeDeg);
-}
-
-// Altitude from RA (hours), Dec (deg), lat (deg), LST (deg)
-function altitude(raHours, decDeg, latDeg, lstDeg) {
-    const raDeg = raHours * 15;
-    const haDeg = normalizeDeg(lstDeg - raDeg); // hour angle in degrees
-    const haRad = deg2rad(haDeg);
-    const decRad = deg2rad(decDeg);
-    const latRad = deg2rad(latDeg);
-
-    const sinAlt = Math.sin(decRad) * Math.sin(latRad) +
-                   Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
-    const altRad = Math.asin(sinAlt);
-    return { altDeg: rad2deg(altRad), haDeg };
-}
-
-// Transit preference score: smaller |HA| is better
-function transitScore(haDeg) {
-    const d = Math.min(Math.abs(haDeg), 360 - Math.abs(haDeg));
-    return d; // lower is better
-}
-
-// Adaptive altitude threshold (local hour 0–23)
-// Before midnight (20–23): 30°
-// 00–02: 25°
-// After 02: 20°
-function altitudeThreshold(hour) {
-    if (hour >= 20 || hour < 0) return 30;
-    if (hour >= 0 && hour < 2) return 25;
-    return 20;
-}
-
-// ---------- Seestar‑tuned catalog filters ----------
-const MAG_LIMIT = 12.5;      // Seestar‑friendly brightness
-const SIZE_LIMIT_ARCMIN = 2; // avoid tiny specks
-
-function isSeestarFriendly(obj) {
-    if (obj.mag != null && obj.mag > MAG_LIMIT) return false;
-    if (obj.size != null && obj.size < SIZE_LIMIT_ARCMIN) return false;
-    return true;
-}
-
-// crude Telescopius link builder (fallback if no explicit link)
-function buildTelescopiusLink(name) {
-    const encoded = encodeURIComponent(name.replace(/\s+/g, '-').toLowerCase());
-    return `https://telescopius.com/deep-sky/object/${encoded}`;
-}
-
-// ---------- Location bootstrap ----------
-function startWithLocation() {
-    const savedLat = localStorage.getItem("astro_lat");
-    const savedLon = localStorage.getItem("astro_lon");
-
-    if (savedLat && savedLon) {
-        loadAstro(parseFloat(savedLat), parseFloat(savedLon));
+async function setManualLocation() {
+    const lat = parseFloat(document.getElementById("latInput").value);
+    const lon = parseFloat(document.getElementById("lonInput").value);
+    if (isNaN(lat) || isNaN(lon)) {
+        showToast("Enter valid latitude and longitude.", "warn");
         return;
     }
-
-    navigator.geolocation.getCurrentPosition(
-        pos => loadAstro(pos.coords.latitude, pos.coords.longitude),
-        () => {
-    document.getElementById("status").innerHTML =
-        "Location blocked. Enter coordinates manually or retry GPS.";
-}
-    );
+    currentLat = lat; currentLon = lon;
+    if (api) await api.saveLocation(lat, lon, `${lat.toFixed(3)}, ${lon.toFixed(3)}`);
+    document.getElementById("location-label").textContent = `📍 ${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+    resetUI();
+    await loadAstro(lat, lon);
 }
 
-async function loadAstro(lat, lon) {
+async function clearLocation() {
+    currentLat = null; currentLon = null;
+    if (api) await api.saveLocation(null, null, null);
+    document.getElementById("latInput").value = "";
+    document.getElementById("lonInput").value = "";
+    document.getElementById("location-label").textContent = "";
+    showToast("Location cleared.", "info");
+}
+
+function retryAutoLocation() {
+    resetUI("Requesting GPS location…");
+    requestGPS();
+}
+
+function requestGPS() {
+    if (api) {
+        // In Electron, geolocation should work — but we first check settings
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                currentLat = pos.coords.latitude;
+                currentLon = pos.coords.longitude;
+                if (api) api.saveLocation(currentLat, currentLon, 'GPS');
+                document.getElementById("location-label").textContent =
+                    `📍 GPS: ${currentLat.toFixed(3)}, ${currentLon.toFixed(3)}`;
+                loadAstro(currentLat, currentLon);
+            },
+            () => {
+                document.getElementById("status").innerHTML =
+                    "GPS unavailable. Enter coordinates manually.";
+            },
+            { timeout: 10000 }
+        );
+    }
+}
+
+async function manualRefreshWeather() {
+    if (!currentLat || !currentLon) {
+        showToast("No location set yet.", "warn");
+        return;
+    }
+    resetUI("Fetching fresh weather data…");
+    await loadAstro(currentLat, currentLon, true);
+    showToast("Weather data refreshed.", "success");
+}
+
+// ─── Main render ───────────────────────────────────────────────────────────
+async function loadAstro(lat, lon, forceRefresh = false) {
     const status = document.getElementById('status');
-    const nightColumns = document.getElementById('night-columns');
+    const nightColumnsEl = document.getElementById('night-columns');
     const bottomSummaryDiv = document.getElementById('bottom-summary');
 
-    const nightsSummary = [];
-
     try {
+        // 1. Catalog
+        let OBJECTS;
+        if (api) {
+            const catResult = await api.loadCatalog();
+            if (!catResult.success) throw new Error("Catalog load failed: " + catResult.error);
+            OBJECTS = catResult.catalog.filter(isSeestarFriendly);
+        } else {
+            // Browser fallback
+            const res = await fetch('seestar_catalog.json');
+            OBJECTS = (await res.json()).filter(isSeestarFriendly);
+        }
+
+        if (OBJECTS.length === 0) throw new Error("Catalog filter removed all objects");
+
+        // 2. Weather (from cache or fresh)
+        let weather, smoke;
+
+        if (api) {
+            const result = forceRefresh
+                ? await api.refreshWeather(lat, lon)
+                : await api.getWeather(lat, lon);
+
+            if (!result.success) throw new Error("Weather fetch failed: " + result.error);
+            weather = result.weather;
+            smoke   = result.smoke;
+
+            if (result.fromCache) {
+                const t = new Date(result.cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                showToast(`Using cached weather from ${t}`, 'info', 3000);
+            }
+        } else {
+            // Browser fallback
+            const [wRes, sRes] = await Promise.all([
+                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,relative_humidity_2m&forecast_days=16&timezone=auto`),
+                fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,pm10&timezone=auto`)
+            ]);
+            weather = await wRes.json();
+            smoke   = await sRes.json();
+        }
+
+        await updateCacheBadge();
+
+        // 3. Build nights
         const now = new Date();
+        nightColumnsEl.innerHTML = "";
+        const nightsSummary = [];
 
-        // Load weather + smoke
-        const weatherUrl =
-            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-            `&hourly=cloud_cover,relative_humidity_2m&forecast_days=16&timezone=auto`;
+        const dateStrings = [];
+        for (let n = 0; n < 3; n++) {
+            const d = new Date(now);
+            d.setDate(d.getDate() + n);
+            dateStrings.push(d.toISOString().split("T")[0]);
+            const nd = new Date(d);
+            nd.setDate(nd.getDate() + 1);
+            dateStrings.push(nd.toISOString().split("T")[0]);
+        }
+        const uniqueDates = [...new Set(dateStrings)];
 
-        const smokeUrl =
-            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-            `&hourly=pm2_5,pm10&timezone=auto`;
-
-        // Load NGC catalog (Seestar‑tuned via filters)
-        const catalogUrl = 'seestar_catalog.json';
-
-        const [weatherRes, smokeRes, catalogRes] = await Promise.all([
-            fetch(weatherUrl),
-            fetch(smokeUrl),
-            fetch(catalogUrl)
-        ]);
-
-        if (!weatherRes.ok || !smokeRes.ok || !catalogRes.ok)
-            throw new Error("API or catalog access failed");
-
-        const weather = await weatherRes.json();
-        const smoke = await smokeRes.json();
-        const catalogRaw = await catalogRes.json();
-
-        // Filter catalog for Seestar‑friendly targets
-        const OBJECTS = catalogRaw.filter(isSeestarFriendly);
-
-        if (OBJECTS.length === 0)
-            throw new Error("Catalog filter removed all objects (adjust MAG_LIMIT / SIZE_LIMIT)");
+        // Sun times
+        let sunTimesMap = {};
+        if (api) {
+            const stResult = await api.getSunTimes(lat, lon, uniqueDates);
+            if (stResult.success) {
+                stResult.results.forEach(r => { sunTimesMap[r.date] = r.data; });
+            }
+        } else {
+            await Promise.all(uniqueDates.map(async d => {
+                try {
+                    const r = await fetch(`https://api.sunrisesunset.io/json?lat=${lat}&lng=${lon}&date=${d}&timezone=auto`);
+                    sunTimesMap[d] = await r.json();
+                } catch (_) {}
+            }));
+        }
 
         status.style.display = 'none';
 
         for (let n = 0; n < 3; n++) {
             const col = document.createElement('div');
             col.className = 'night-column';
-            nightColumns.appendChild(col);
+            nightColumnsEl.appendChild(col);
 
-            let night = new Date(now);
+            const night = new Date(now);
             night.setDate(night.getDate() + n);
-
             const nightStr = night.toISOString().split("T")[0];
 
             const nextDay = new Date(night);
@@ -293,217 +536,172 @@ async function loadAstro(lat, lon) {
             for (let h = 0; h <= 6; h++)
                 nightHours.push(`${nextDayStr}T${String(h).padStart(2,"0")}:00`);
 
-            const duskUrl = `https://api.sunrisesunset.io/json?lat=${lat}&lng=${lon}&date=${nightStr}&timezone=auto`;
-            const dawnUrl = `https://api.sunrisesunset.io/json?lat=${lat}&lng=${lon}&date=${nextDayStr}&timezone=auto`;
-
-            const [duskRes, dawnRes] = await Promise.all([
-                fetch(duskUrl),
-                fetch(dawnUrl)
-            ]);
-
-            const duskData = await duskRes.json();
-            const dawnData = await dawnRes.json();
-
-            const duskRaw = duskData?.results?.last_light || null;
-            const dawnRaw = dawnData?.results?.first_light || null;
-
+            const duskRaw = sunTimesMap[nightStr]?.results?.last_light   || null;
+            const dawnRaw = sunTimesMap[nextDayStr]?.results?.first_light || null;
             const dusk = formatTwilight(duskRaw);
             const dawn = formatTwilight(dawnRaw);
 
             const merged = weather.hourly.time.map((t, i) => ({
                 time: t,
                 clouds: weather.hourly.cloud_cover[i],
-                hum: weather.hourly.relative_humidity_2m[i],
-                pm25: smoke.hourly.pm2_5[i]
-            })).filter(entry => nightHours.includes(entry.time));
+                hum:    weather.hourly.relative_humidity_2m[i],
+                pm25:   smoke.hourly.pm2_5[i]
+            })).filter(e => nightHours.includes(e.time));
 
-            const moonEmoji = getMoonEmoji(night);
-            const bannerDate = night.toLocaleDateString([], {
-                weekday: 'long', month: 'short', day: 'numeric'
-            });
+            const moonStr = getMoonEmoji(night);
+            const bannerDate = night.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
 
             const banner = document.createElement('div');
             banner.className = 'day-banner';
-            banner.innerHTML = `<span>${moonEmoji} ${bannerDate}</span>`;
+            banner.textContent = `${moonStr}  •  ${bannerDate}`;
             col.appendChild(banner);
 
-            // Track per-night max altitude for each object
             const perObjectMax = new Map();
-            OBJECTS.forEach(obj => {
-                perObjectMax.set(obj.name, {
-                    maxAlt: -90,
-                    maxTime: null
-                });
-            });
+            OBJECTS.forEach(obj => perObjectMax.set(obj.name, { maxAlt: -90, maxTime: null }));
 
-            // Hour-by-hour rows
             merged.forEach(entry => {
-                const dateLocal = new Date(entry.time); // local tz from API
+                const dateLocal = new Date(entry.time);
                 const hourLocal = dateLocal.getHours();
-
                 const jd = toJulianDate(new Date(dateLocal.toISOString()));
                 const gmstDeg = gmst(jd);
-                const lstDeg = lst(gmstDeg, lon);
+                const lstDeg  = lst(gmstDeg, lon);
 
-                const smokeInfo = smokeImpact(entry.pm25);
-                const isClearSky =
-                    entry.clouds < 25 &&
-                    entry.hum < 90 &&
-                    smokeInfo.ok;
-
-                const threshold = altitudeThreshold(hourLocal);
-
+                const smokeInfo  = smokeImpact(entry.pm25);
+                const isClearSky = entry.clouds < 25 && entry.hum < 90 && smokeInfo.ok;
+                const threshold  = altitudeThreshold(hourLocal);
                 const visibleObjects = [];
 
                 OBJECTS.forEach(obj => {
                     const { altDeg, haDeg } = altitude(obj.ra, obj.dec, lat, lstDeg);
 
-                    // Track max altitude for nightly summary (altitude-based, independent of weather)
                     const rec = perObjectMax.get(obj.name);
-                    if (altDeg > rec.maxAlt) {
-                        rec.maxAlt = altDeg;
-                        rec.maxTime = new Date(dateLocal);
-                    }
+                    if (altDeg > rec.maxAlt) { rec.maxAlt = altDeg; rec.maxTime = new Date(dateLocal); }
 
                     if (altDeg >= threshold) {
-    const url =
-        obj.wikipedia_url ||
-        obj.simbad_url ||
-        obj.telescopius_search_url ||
-        buildTelescopiusLink(obj.name);
-
-    visibleObjects.push({
-        name: obj.name,
-        altDeg,
-        haDeg,
-        mag: obj.mag,
-        type: obj.type,
-        link: url
-    });
-}
+                        const url = obj.wikipedia_url || obj.simbad_url ||
+                            obj.telescopius_search_url || buildTelescopiusLink(obj.name);
+                        visibleObjects.push({ name: obj.name, altDeg, haDeg, mag: obj.mag, type: obj.type, link: url });
+                    }
                 });
 
                 let bestObject = null;
-
                 if (visibleObjects.length === 1) {
                     bestObject = visibleObjects[0];
                 } else if (visibleObjects.length > 1) {
-                    // sort by altitude desc
                     visibleObjects.sort((a, b) => b.altDeg - a.altDeg);
-                    const top = visibleObjects[0];
-                    const second = visibleObjects[1];
-
+                    const [top, second] = visibleObjects;
                     if (Math.abs(top.altDeg - second.altDeg) <= 20) {
-                        const topScore = transitScore(top.haDeg);
-                        const secondScore = transitScore(second.haDeg);
-                        bestObject = topScore <= secondScore ? top : second;
+                        bestObject = transitScore(top.haDeg) <= transitScore(second.haDeg) ? top : second;
                     } else {
                         bestObject = top;
                     }
                 }
 
                 const isClear = isClearSky && !!bestObject;
-
-                const row = document.createElement(isClear ? 'a' : 'div');
-                row.className = `item ${isClear ? 'clear-slot' : ''}`;
+                const row = document.createElement('div');
+                row.className = `item${isClear ? ' clear-slot' : ''}`;
 
                 if (isClear && bestObject) {
-                    row.href = bestObject.link;
-                    row.target = "_blank";
+                    row.style.cursor = 'pointer';
+                    row.addEventListener('click', () => openLink(bestObject.link));
                 }
 
                 row.innerHTML = `
                     <div>
-                        <div style="font-weight:bold;">
+                        <div style="font-weight:600; font-size:0.9rem;">
                             ${dateLocal.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                         </div>
-                        <div style="font-size:0.8rem; color:#8b949e;">
-                            Cloud: ${entry.clouds}% | Hum: ${entry.hum}% | Smoke: ${smokeInfo.label}
+                        <div style="font-size:0.75rem; color:#8b949e; margin-top:2px;">
+                            ☁ ${entry.clouds}% · 💧 ${entry.hum}% · ${smokeInfo.label}
                         </div>
-                        ${isClear && bestObject ? `<span class="target-hint">Best: ${bestObject.name}</span>` : ""}
+                        ${isClear && bestObject ? `<span class="target-hint">⭐ ${bestObject.name} (${Math.round(bestObject.altDeg)}°)</span>` : ""}
                     </div>
-                    <span class="rating ${isClear ? 'exc' : 'poor'}">
-                        ${isClear ? "CLEAR" : "POOR"}
-                    </span>
+                    <span class="rating ${isClear ? 'exc' : 'poor'}">${isClear ? "CLEAR" : "POOR"}</span>
                 `;
-
                 col.appendChild(row);
             });
 
-            // Build nightly summary record
-            const nightSummary = {
-                dateLabel: bannerDate,
-                dusk,
-                dawn,
-                objects: []
-            };
-
+            // Build nightly summary
+            const nightSummary = { dateLabel: bannerDate, dusk, dawn, objects: [] };
             perObjectMax.forEach((rec, name) => {
                 if (rec.maxAlt > 0 && rec.maxTime) {
-                    nightSummary.objects.push({
-                        name,
-                        maxAlt: rec.maxAlt,
-                        maxTime: rec.maxTime
-                    });
+                    const catalogObj = OBJECTS.find(o => o.name === name);
+                    const link = catalogObj?.wikipedia_url || catalogObj?.simbad_url ||
+                        catalogObj?.telescopius_search_url || buildTelescopiusLink(name);
+                    nightSummary.objects.push({ name, maxAlt: rec.maxAlt, maxTime: rec.maxTime, link });
                 }
             });
-
-            // Sort nightly objects by max altitude descending
             nightSummary.objects.sort((a, b) => b.maxAlt - a.maxAlt);
-
             nightsSummary.push(nightSummary);
         }
 
-        // Bottom summary (grouped by night)
+        // Bottom summary
         bottomSummaryDiv.style.display = "block";
-        let html = `<h2>Dark Window & Best Altitude by Night (Seestar‑Tuned)</h2>`;
+        let html = `<h2>🌌 Dark Window &amp; Best Objects by Night</h2>`;
 
         nightsSummary.forEach(night => {
             html += `
                 <div class="night-summary">
                     <div class="night-summary-date">${night.dateLabel}</div>
-                    <div class="night-summary-dark">Dark Window: ${night.dusk} → ${night.dawn}</div>
+                    <div class="night-summary-dark">🌆 Dusk: ${night.dusk} &nbsp;→&nbsp; Dawn: ${night.dawn} 🌅</div>
             `;
-
             if (night.objects.length === 0) {
-                html += `<div class="night-summary-object" style="color:#8b949e;">No objects significantly above horizon this night</div>`;
+                html += `<div class="night-summary-object" style="color:#8b949e;">No objects above horizon this night</div>`;
             } else {
                 night.objects.slice(0, 10).forEach(obj => {
-                    const timeStr = obj.maxTime.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                    });
-                    const altRounded = Math.round(obj.maxAlt);
-                    const catalogObj = OBJECTS.find(o => o.name === obj.name);
-
-const link =
-    catalogObj?.wikipedia_url ||
-    catalogObj?.simbad_url ||
-    catalogObj?.telescopius_search_url ||
-    buildTelescopiusLink(obj.name);
+                    const timeStr = obj.maxTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    const altR = Math.round(obj.maxAlt);
                     html += `
                         <div class="night-summary-object">
-                            <a href="${link}" target="_blank">${obj.name}</a>
-                            — Max Alt: ${altRounded}° at ${timeStr}
+                            <a onclick="openLink('${obj.link}')" href="#">${obj.name}</a>
+                            — Max Alt: ${altR}° at ${timeStr}
                         </div>
                     `;
                 });
             }
-
             html += `</div>`;
         });
 
         bottomSummaryDiv.innerHTML = html;
 
     } catch (err) {
-        status.style.display = 'block';
-        status.innerHTML = `Error: ${err.message}`;
+        document.getElementById("status").style.display = 'block';
+        document.getElementById("status").innerHTML = `⚠ Error: ${err.message}`;
+        console.error(err);
     }
 }
 
-startWithLocation();
-</script>
+// ─── Midnight auto-refresh listener ────────────────────────────────────────
+if (api) {
+    api.onWeatherRefreshed(data => {
+        showToast("🌙 Weather auto-refreshed for tonight!", "success", 5000);
+        updateCacheBadge();
+        if (currentLat && currentLon) loadAstro(currentLat, currentLon);
+    });
+}
 
+// ─── Boot ──────────────────────────────────────────────────────────────────
+async function boot() {
+    updateCacheBadge();
+
+    if (api) {
+        const settings = await api.loadSettings();
+        if (settings.lat && settings.lon) {
+            currentLat = settings.lat;
+            currentLon = settings.lon;
+            document.getElementById("latInput").value  = settings.lat;
+            document.getElementById("lonInput").value  = settings.lon;
+            document.getElementById("location-label").textContent =
+                `📍 ${settings.locationName || `${settings.lat.toFixed(3)}, ${settings.lon.toFixed(3)}`}`;
+            await loadAstro(settings.lat, settings.lon);
+            return;
+        }
+    }
+
+    requestGPS();
+}
+
+boot();
+</script>
 </body>
 </html>
