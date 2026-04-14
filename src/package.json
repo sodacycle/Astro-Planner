@@ -1,0 +1,43 @@
+{
+  "name": "astro-planner-seestar",
+  "version": "1.0.0",
+  "description": "Seestar-Optimized Astronomical Visibility Planner",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": ["astronomy", "seestar", "telescope", "astrophotography"],
+  "author": "Astro Planner",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.astro.planner.seestar",
+    "productName": "Astro Planner – Seestar",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "src/icon.png"
+    }
+  }
+}

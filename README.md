@@ -1,193 +1,131 @@
-# Astro Planner — Seestar Optimized Astronomical Visibility Engine
+# Astro Planner — Seestar-Optimized Astronomical Visibility Engine (Electron)
 
-Astro Planner is a client‑side astronomical planning tool built for real‑world astrophotography.  
-It uses your device location, precise astronomical math, weather and smoke data, and a Seestar‑optimized deep‑sky catalog to recommend the best targets each night.
+Astro Planner is a **desktop Electron app** for real-world astrophotography planning.  
+It uses your location, precise astronomical math, live weather/smoke data, and a Seestar-optimized deep-sky catalog to recommend the best targets each night.
 
 ---
 
-## Features
+## What's New — Electron Edition
 
-### Real Astronomical Calculations
-- **Julian Date**, **GMST**, **LST**, **Hour Angle**, and **Altitude** computed directly in the browser  
-- **Transit scoring** favors objects near transit (hour angle ≈ 0)  
-- No external astronomy libraries required  
-
-### Seestar Optimized Catalog
-- Catalog filtered for the **ZWO Seestar Telescopes**  
-- Default limits: **integrated magnitude ≤ 12.5**, **angular size ≥ 2 arcmin**  
-- Includes galaxies, nebulae, clusters, and supernova remnants with **RA**, **Dec**, **mag**, **size**, and **type**  
-
-### Adaptive Altitude Thresholds
-- Before midnight: **≥ 30°**  
-- 00:00–02:00: **≥ 25°**  
-- After 02:00: **≥ 20°**  
-
-### Transit‑Aware Selection
-When multiple objects qualify:
-1. Highest altitude wins  
-2. If within **20°**, the object closest to transit is chosen  
-
-### Weather and Smoke Integration
-- Hourly cloud cover, humidity, and PM2.5  
-- Hours labeled **CLEAR** or **POOR**  
-
-### UI Behavior
-- Hour columns show local time + sky conditions  
-- No object lists inside hour columns  
-- Bottom summary shows dark window + each object’s **Max Altitude** and **Time of Max Altitude** (24‑hour format)
+| Feature | Details |
+|---|---|
+| **Native desktop app** | Runs as a standalone Electron window — no browser, no server |
+| **Daily weather cache** | Weather fetched once per day and cached to disk; never re-fetches unnecessarily |
+| **Auto midnight refresh** | At 12:05 AM, weather cache is automatically refreshed for the new night |
+| **Manual refresh button** | Force a fresh weather pull any time with the ⟳ button |
+| **Persistent location** | Your coordinates are saved across restarts |
+| **Cache status badge** | Header shows when weather was last fetched |
+| **External links** | Catalog links open in your system browser (not inside the app) |
+| **No CORS issues** | All HTTP calls go through the main process — no browser restrictions |
 
 ---
 
 ## Files
 
 | File | Description |
-|------|-------------|
-| `astro.html` | Main application with astronomical engine and UI |
-| `seestar_catalog.json` | Seestar‑optimized deep sky catalog |
+|---|---|
+| `main.js` | Electron main process: weather caching, IPC handlers, auto-refresh scheduler |
+| `preload.js` | Secure IPC bridge between main and renderer |
+| `src/astro.html` | UI — the full astronomical planning interface |
+| `src/seestar_catalog.json` | Seestar-optimized deep sky catalog |
 | `scripts/run-astro-planner.bat` | Windows launcher |
 | `scripts/astro_server.sh` | Linux/macOS launcher |
 
 ---
 
-## How It Works
+## Getting Started
 
-1. Browser requests device location  
-2. Loads weather + air quality data  
-3. Loads Seestar catalog  
-4. Computes altitude for each object hourly  
-5. Applies adaptive altitude thresholds  
-6. Applies transit‑aware ranking  
-7. Marks each hour CLEAR or POOR  
-8. Builds nightly summaries  
+### Requirements
 
-Example summary: `M51 Galaxy — Max Alt: 78° at 01:00`
+- **Node.js 18+** — https://nodejs.org  
+- **npm** (included with Node.js)
 
 ---
 
-# Getting Started
+### 🪟 Windows
 
-Astro Planner runs entirely locally using a lightweight Python web server.  
-Choose the instructions for your operating system below.
+1. Install Node.js from https://nodejs.org (check "Add to PATH")
+2. Double-click `scripts/run-astro-planner.bat`
 
----
-
-# 🪟 Windows Setup
-
-### 1. Install Python 3
-Download from:  
-https://www.python.org/downloads/windows/  
-Check **“Add Python to PATH”** during installation.
+Or manually:
+```
+npm install
+npm start
+```
 
 ---
 
-### 2. Download or clone the repository
-Your folder should contain:
-`src/`
-`scripts/`
-`README.md`
-`LICENSE`
+### 🐧 Linux / macOS
+
+```bash
+chmod +x scripts/astro_server.sh
+./scripts/astro_server.sh
+```
+
+Or manually:
+```bash
+npm install
+npm start
+```
 
 ---
 
-### 3. Run the Windows launcher
-Double‑click: `scripts/run-astro-planner.bat`
+## How the Weather Cache Works
 
-This will:
-- Start a local Python server  
-- Open your browser to the dashboard  
-- Load `astro.html` automatically  
-
----
-
-### 4. Manual method (optional)
-
-`cd src`
-`python -m http.server 8000`
-
-Then open: `http://localhost:8000/astro.html`
+1. On first launch (or new location), weather is fetched live from Open-Meteo
+2. Data is saved to `<userData>/weather_cache.json` with today's date, lat, and lon
+3. On subsequent launches **today**, the cache is reused automatically
+4. At **12:05 AM**, the main process wakes up, clears the old cache, fetches new data, and pushes it to the renderer — no user action needed
+5. If your location changes by more than ~0.05°, the cache is considered stale and re-fetched
+6. The ⟳ **Refresh Weather** button forces an immediate fresh fetch
 
 ---
 
-# 🐧 Linux / macOS Setup
+## Building a Distributable
 
-### 1. Verify Python 3
-Check with: `python3 --version`
+```bash
+npm install
+npm run build:win    # Windows installer (.exe)
+npm run build:mac    # macOS disk image (.dmg)
+npm run build:linux  # Linux AppImage
+```
 
----
-
-### 2. Download or clone the repository
-
----
-
-### 3. Use the included helper script
-
-Make it executable:
-
-`chmod +x scripts/astro_server.sh`
-
-Run it:
-
-`./scripts/astro_server.sh`
-
-This will:
-- Start a Python server  
-- Open your default browser  
+Output goes to `dist/`.
 
 ---
 
-### 4. Manual method (optional)
+## Astronomical Features
 
-`cd src`
-`python3 -m http.server 8000`
-
-Then open:
-
-`http://localhost:8000/astro.html`
-
+- **Julian Date, GMST, LST, Hour Angle, Altitude** — computed in the renderer with no external libraries
+- **Transit-aware ranking** — objects near transit preferred when altitudes are within 20°
+- **Adaptive altitude thresholds** — 30° before midnight, 25° at 00–02, 20° after 02
+- **Seestar catalog filters** — mag ≤ 12.5, size ≥ 2 arcmin
+- **3-night forecast** — hourly CLEAR/POOR ratings with best target per hour
 
 ---
 
-# 🍏 macOS Notes
-
-If your system uses `python` instead of `python3`:
-
-`python -m http.server 8000`
-
-
-To open the browser manually:
-
-`open http://localhost:8000/astro.html`
-
----
-
-# Catalog Schema
-
-The `seestar_catalog.json` file must follow this schema:
+## Catalog Schema
 
 ```json
 [
   {
-    "name": "Object Name",
-    "id": "NGC 1234",
+    "name": "M51 Whirlpool Galaxy",
+    "id": "NGC 5194",
     "type": "Galaxy",
-    "ra": 12.345,
-    "dec": 45.678,
-    "mag": 10.5,
-    "size": 12.0
+    "ra": 13.5,
+    "dec": 47.2,
+    "mag": 8.4,
+    "size": 11.0,
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Messier_51",
+    "simbad_url": "...",
+    "telescopius_search_url": "..."
   }
 ]
 ```
-  `ra` is in hours
 
-   `dec` is in degrees
+- `ra` — Right ascension in hours  
+- `dec` — Declination in degrees  
+- `mag` — Integrated magnitude  
+- `size` — Angular size in arcminutes  
 
-   `mag` is integrated magnitude
-
-   `size` is angular size in arcminutes
-
-Adjust `MAG_LIMIT` and `SIZE_LIMIT_ARCMIN` in the script to tune recommendations.
-
-
-
-
-
+Tune `MAG_LIMIT` and `SIZE_LIMIT_ARCMIN` in `src/astro.html` to adjust filtering.
