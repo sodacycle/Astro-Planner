@@ -1,7 +1,7 @@
 # Astro Planner — Seestar-Optimized Astronomical Visibility Engine (Electron)
 
 Astro Planner is a **desktop Electron app** for real-world astrophotography planning.  
-It uses your location, precise astronomical math, live weather/smoke data, and a Deep-sky catalog to recommend the best targets each night.
+It uses your location, precise astronomical math, live weather/smoke data, and a Seestar-optimized deep-sky catalog to recommend the best targets each night.
 
 ---
 
@@ -26,8 +26,8 @@ It uses your location, precise astronomical math, live weather/smoke data, and a
 |---|---|
 | `main.js` | Electron main process: weather caching, IPC handlers, auto-refresh scheduler |
 | `preload.js` | Secure IPC bridge between main and renderer |
-| `astro.html` | UI — the full astronomical planning interface |
-| `ngc-ic-messier-catalog.json` | Deep sky catalog |
+| `src/astro.html` | UI — the full astronomical planning interface |
+| `src/seestar_catalog.json` | Seestar-optimized deep sky catalog |
 | `scripts/run-astro-planner.bat` | Windows launcher |
 | `scripts/astro_server.sh` | Linux/macOS launcher |
 
@@ -107,56 +107,20 @@ Output goes to `dist/`.
 ## Catalog Schema
 
 ```json
-"NGC",
-"name":"NGC628",
-"m":[
-
-    "M74"
-
+[
+  {
+    "name": "M51 Whirlpool Galaxy",
+    "id": "NGC 5194",
+    "type": "Galaxy",
+    "ra": 13.5,
+    "dec": 47.2,
+    "mag": 8.4,
+    "size": 11.0,
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Messier_51",
+    "simbad_url": "...",
+    "telescopius_search_url": "..."
+  }
 ]
-,
-"ngc":null,
-"ic":null,
-"type":"G",
-"object_definition":"Galaxy",
-"ra":"01:36:41.75",
-"dec":"+15:47:01.2",
-"const":"Psc",
-"majax":9.89,
-"minax":9.33,
-"posang":87,
-"b_mag":10,
-"v_mag":9.46,
-"j_mag":7.63,
-"h_mag":7.04,
-"k_mag":6.85,
-"surfbr":23.37,
-"hubble":"Sc",
-"cstar_u_mag":null,
-"cstar_b_mag":null,
-"cstar_v_mag":null,
-"cstar_names":null,
-"identifiers":"2MASX J01364177+1547004,IRAS 01340+1532,MCG +03-05-011,PGC 005974,UGC 01149",
-"common_names":null,
-"ned_notes":null,
-"openngc_notes":null,
-"image":{
-
-    "thumbnail":true,
-    "filename":"M074.JPG",
-    "format":"JPEG",
-    "width":816,
-    "mimetype":"image/jpeg",
-    "id":"366e8c3e374eec05b66820745c8bfddb",
-    "last_synchronized":"2020-05-01T21:28:46.449327",
-    "color_summary":[
-        "rgba(241, 240, 240, 1.00)",
-        "rgba(253, 252, 252, 1.00)",
-        "rgba(249, 249, 249, 1.00)"
-    ]
-    ,
-    "height":1054,
-    "url":"https://data.smartidf.services/api/explore/v2.1/catalog/datasets/ngc-ic-messier-catalog/files/366e8c3e374eec05b66820745c8bfddb"
 ```
 
 - `ra` — Right ascension in hours  
@@ -164,4 +128,4 @@ Output goes to `dist/`.
 - `mag` — Integrated magnitude  
 - `size` — Angular size in arcminutes  
 
-Tune `MAG_LIMIT` and `SIZE_LIMIT_ARCMIN` in `astro.html` to adjust filtering.
+Tune `MAG_LIMIT` and `SIZE_LIMIT_ARCMIN` in `src/astro.html` to adjust filtering.

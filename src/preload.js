@@ -12,10 +12,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Catalog
   loadCatalog: () => ipcRenderer.invoke('load-catalog'),
-  
-   // Sun times (sunrise/sunset API, called from main process to avoid CORS)
+
+  // Sun times (sunrise/sunset API, called from main process to avoid CORS)
   getSunTimes: (lat, lon, dates) =>
     ipcRenderer.invoke('get-sun-times', { lat, lon, dates }),
+
+  // Light pollution
+  getLightPollution: (lat, lon) =>  ipcRenderer.invoke('get-light-pollution', { lat, lon }),
+  clearLPCache: (lat, lon) => ipcRenderer.invoke('clear-lp-cache', { lat, lon }),
+
+  // IP-based location (fallback when GPS unavailable in Electron)
+  getIPLocation: () => ipcRenderer.invoke('get-ip-location'),
 
   // Cache info
   cacheStatus: () => ipcRenderer.invoke('cache-status'),

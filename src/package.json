@@ -25,19 +25,19 @@
     "files": [
       "main.js",
       "preload.js",
-      "src/**/*"
+      "**/*"
     ],
     "win": {
       "target": "nsis",
-      "icon": "src/icon.ico"
+      "icon": "icon.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "src/icon.icns"
+      "icon": "icon.icns"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "src/icon.png"
+      "icon": "icon.png"
     }
   }
 }
