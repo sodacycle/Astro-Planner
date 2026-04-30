@@ -499,7 +499,7 @@
     <!-- Header -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
         <div>
-            <h1 style="font-size: 1.1rem; font-weight: 600; margin: 0;">🔭 Astro Planner – Seestar-Tuned</h1>
+            <h1 style="font-size: 1.1rem; font-weight: 600; margin: 0;">Astro Planner – Seestar-Tuned</h1>
             <small style="color: var(--text-muted); font-size: 0.75rem;">Auto-Location • Seestar Catalog (mag ≤ 12.5, size ≥ 2′) • Real Altitude Visibility</small>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -514,12 +514,12 @@
         <input id="lonInput" type="number" step="0.01" placeholder="Longitude">
         <button class="btn btn-primary" onclick="setManualLocation()">Set Location</button>
         <button class="btn btn-secondary" onclick="retryAutoLocation()">⌖ GPS</button>
-        <button class="btn btn-danger" onclick="clearLocation()" title="Forget saved location">✕ Clear</button>
+            <button class="btn btn-danger" onclick="clearLocation()" title="Forget saved location">Clear</button>
         <span id="location-label"></span>
 
         <!-- Light Pollution display -->
         <div id="lp-panel" class="lp-panel" style="margin-left: auto;">
-            <span class="lp-loading">🔭 Light pollution: awaiting location…</span>
+            <span class="lp-loading">Light pollution: awaiting location…</span>
         </div>
     </div>
 </div>
@@ -534,13 +534,13 @@
 
 <!-- Summary Columns Card -->
 <div class="card" style="margin: 16px; display: none;" id="summary-card">
-    <h2>🌌 Dark Window & Best Objects</h2>
+    <h2>Dark Window & Best Objects</h2>
     <div id="summary-columns" class="summary-columns"></div>
 </div>
 
 <!-- Popular Columns Card -->
 <div class="card" style="margin: 16px; display: none;" id="popular-card">
-    <h2>📸 Most-Imaged Targets</h2>
+    <h2>Most-Imaged Targets</h2>
     <div id="popular-columns" class="popular-columns"></div>
 </div>
 
@@ -764,10 +764,10 @@ function showObjectDetail(objData) {
     const catalogObj = fullCatalog.find(o => o.name === objData.name);
     if (catalogObj) {
         document.getElementById('info-type').textContent = catalogObj.object_definition || catalogObj.type || 'N/A';
-        document.getElementById('info-const').textContent = catalogObj.const || 'N/A';
+        document.getElementById('info-const').textContent = getFullConstellation(catalogObj?.const);
         document.getElementById('info-mag').textContent = catalogObj.b_mag ?? catalogObj.v_mag ?? 'N/A';
         document.getElementById('info-size').textContent = catalogObj.majax ? `${catalogObj.majax}' x ${catalogObj.minax || catalogObj.majax}'` : 'N/A';
-        document.getElementById('info-distance').textContent = catalogObj.identifiers?.includes('PGC') ? 'See Wikipedia' : 'N/A';
+        document.getElementById('info-distance').textContent = 'Loading...';
     }
     const raHours = parseRA(objData.ra || (catalogObj && catalogObj.ra));
     const decDeg = parseDec(objData.dec || (catalogObj && catalogObj.dec));
@@ -786,6 +786,29 @@ function showObjectDetail(objData) {
     fetchWikipediaInfo(objData.link, objData.name).then(wikiData => {
         document.getElementById('wiki-summary').textContent = wikiData.summary;
         document.getElementById('wiki-link').href = wikiData.fullUrl;
+    });
+    fetchWikipediaInfobox(objData.link, objData.name).then(infobox => {
+        if (infobox.error) {
+            document.getElementById('info-distance').textContent = 'N/A';
+            return;
+        }
+        if (infobox.distance) {
+            document.getElementById('info-distance').textContent = formatDistance(infobox.distance);
+        } else {
+            document.getElementById('info-distance').textContent = 'N/A';
+        }
+        if (infobox.constellation) {
+            document.getElementById('info-const').textContent = infobox.constellation;
+        }
+        if (infobox.type && document.getElementById('info-type').textContent === 'N/A') {
+            document.getElementById('info-type').textContent = infobox.type;
+        }
+        if (infobox.apparentMagnitude && document.getElementById('info-mag').textContent === 'N/A') {
+            document.getElementById('info-mag').textContent = infobox.apparentMagnitude;
+        }
+        if (infobox.apparentSize && document.getElementById('info-size').textContent === 'N/A') {
+            document.getElementById('info-size').textContent = infobox.apparentSize;
+        }
     });
 }
 
@@ -835,6 +858,17 @@ function isSeestarFriendly(obj) {
 
 function isPopularTarget(obj) {
     return (obj.m && obj.m.length > 0) || obj.common_names != null;
+}
+
+function getDisplayName(objName) {
+    const catalogObj = fullCatalog.find(o => o.name === objName);
+    if (catalogObj && catalogObj.common_names) {
+        return catalogObj.common_names.split(',')[0].trim();
+    }
+    if (catalogObj && catalogObj.m) {
+        return 'M' + catalogObj.m[0];
+    }
+    return objName.replace(/^(NGC|IC|M)/i, '');
 }
 
 function buildWikipediaLink(name) {
@@ -909,7 +943,7 @@ async function setManualLocation() {
     currentLat = lat; currentLon = lon;
     window.currentLat = lat; window.currentLon = lon;
     if (api) await api.saveLocation(lat, lon, lat.toFixed(3) + ', ' + lon.toFixed(3));
-    document.getElementById("location-label").textContent = '📍 ' + lat.toFixed(3) + ', ' + lon.toFixed(3);
+    document.getElementById("location-label").textContent = lat.toFixed(3) + ', ' + lon.toFixed(3);
     resetUI();
     loadLightPollution(lat, lon);
     await loadAstro(lat, lon);
@@ -942,7 +976,7 @@ function setLocationStatus(msg) {
 function setManualPrompt() {
     const status = document.getElementById('status');
     status.style.display = 'block';
-    status.innerHTML = '📍 Automatic location unavailable — enter coordinates above and press <strong>Set Location</strong>.';
+    status.innerHTML = 'Automatic location unavailable — enter coordinates above and press <strong>Set Location</strong>.';
 }
 
 function applyLocation(lat, lon, label, source) {
@@ -1034,7 +1068,7 @@ async function requestGPS() {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         console.log('[AstroPlanner] OS location success:', lat, lon);
-        applyLocation(lat, lon, '📍 GPS: ' + lat.toFixed(3) + ', ' + lon.toFixed(3), 'GPS');
+        applyLocation(lat, lon, 'GPS: ' + lat.toFixed(3) + ', ' + lon.toFixed(3), 'GPS');
         return;
     } catch (gpsErr) {
         console.warn('[AstroPlanner] OS location failed (' + gpsErr.message + '), falling back to IP…');
@@ -1051,7 +1085,7 @@ async function requestGPS() {
             console.log('[AstroPlanner] IP location success:', lat, lon, country);
             applyLocation(
                 lat, lon,
-                '📍 IP: ' + lat.toFixed(3) + ', ' + lon.toFixed(3) + (country ? ' (' + country + ')' : ''),
+                'IP: ' + lat.toFixed(3) + ', ' + lon.toFixed(3) + (country ? ' (' + country + ')' : ''),
                 'IP: ' + country
             );
             return;
@@ -1274,7 +1308,7 @@ async function loadAstro(lat, lon, forceRefresh = false) {
                     '</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">' +
                     '☁ ' + entry.clouds + '% · 💧 ' + entry.hum + '% · ' + smokeInfo.label +
                     '</div>' +
-                    (isClear && bestObject ? '<span class="target-hint">⭐ ' + bestObject.name + ' (' + Math.round(bestObject.altDeg) + '°)</span>' : '') +
+                    (isClear && bestObject ? '<span class="target-hint">Best: ' + getDisplayName(bestObject.name) + ' (' + Math.round(bestObject.altDeg) + '°)</span>' : '') +
                     '</div><span class="rating ' + (isClear ? 'exc' : 'poor') + '">' + (isClear ? "CLEAR" : "POOR") + '</span>';
                 col.appendChild(row);
             });
@@ -1346,7 +1380,7 @@ async function loadAstro(lat, lon, forceRefresh = false) {
             dateDiv.textContent = night.dateLabel;
             const darkDiv = document.createElement('div');
             darkDiv.className = 'summary-dark';
-            darkDiv.textContent = '🌆 ' + night.dusk + ' → ' + night.dawn + ' 🌅';
+            darkDiv.textContent = night.dusk + ' → ' + night.dawn;
             banner.appendChild(dateDiv);
             banner.appendChild(darkDiv);
             col.appendChild(banner);
@@ -1366,12 +1400,15 @@ async function loadAstro(lat, lon, forceRefresh = false) {
                     row.className = 'summary-item';
                     row.addEventListener('click', function() { showObjectDetail(obj); });
 
-                    /* Name: numbered, prefix-stripped, Messier coloured — matching popular */
-                    const isMessier = obj.name.match(/^M\d+$/i) !== null;
-                    const namePrefix = isMessier ? 'M' : '';
+                    /* Name: use common name if available, else strip prefix */
+                    const displayName = getDisplayName(obj.name);
+                    const isMessier = obj.name.match(/^M\d+$/i) !== null || (function() {
+                        const catObj = fullCatalog.find(o => o.name === obj.name);
+                        return catObj && catObj.m;
+                    })();
                     const link = document.createElement('a');
                     link.href = '#';
-                    link.textContent = (i + 1) + '. ' + namePrefix + obj.name.replace(/^(NGC|IC|M)/i, '');
+                    link.textContent = (i + 1) + '. ' + displayName;
                     if (isMessier) link.classList.add('messier');
 
                     const altSpan = document.createElement('span');
@@ -1414,8 +1451,8 @@ async function loadAstro(lat, lon, forceRefresh = false) {
 
                     const link = document.createElement('a');
                     link.href = '#';
-                    const namePrefix = obj.isMessier ? 'M' : '';
-                    link.textContent = (i + 1) + '. ' + namePrefix + obj.name.replace(/^(NGC|IC|M)/i, '');
+                    const displayName = getDisplayName(obj.name);
+                    link.textContent = (i + 1) + '. ' + displayName;
                     if (obj.isMessier) link.classList.add('messier');
 
                     const ratingSpan = document.createElement('span');
@@ -1430,7 +1467,7 @@ async function loadAstro(lat, lon, forceRefresh = false) {
         });
     } catch (err) {
         document.getElementById("status").style.display = 'block';
-        document.getElementById("status").innerHTML = '⚠ Error: ' + err.message;
+        document.getElementById("status").innerHTML = 'Error: ' + err.message;
         console.error(err);
     }
 }
@@ -1448,14 +1485,14 @@ if (api) {
 function renderLPPanel(lp) {
     const panel = document.getElementById('lp-panel');
     if (!lp) {
-        panel.innerHTML = '<span class="lp-error">💡 Light pollution data unavailable</span>';
+        panel.innerHTML = '<span class="lp-error">Light pollution data unavailable</span>';
         return;
     }
 
     const maxStars = 9;
     const darkStars = maxStars - lp.bortle;
-    const starsFilled = '★'.repeat(darkStars);
-    const starsEmpty  = '☆'.repeat(lp.bortle);
+    const starsFilled = '■'.repeat(darkStars);
+    const starsEmpty  = '□'.repeat(lp.bortle);
 
     const estimatedNote = lp.estimated
         ? ' <span style="color:var(--text-muted);">(estimated' + (lp.placeName ? ' · ' + lp.placeName : '') + ')</span>'
@@ -1486,7 +1523,7 @@ async function loadLightPollution(lat, lon) {
                 console.log('[LP] Using cached light pollution data');
             }
         } else {
-            panel.innerHTML = '<span class="lp-error">💡 Light pollution unavailable</span>';
+            panel.innerHTML = '<span class="lp-error">Light pollution unavailable</span>';
         }
     } else {
         try {
@@ -1501,7 +1538,7 @@ async function loadLightPollution(lat, lon) {
                 throw new Error('No data');
             }
         } catch (_) {
-            panel.innerHTML = '<span class="lp-error">💡 Light pollution unavailable</span>';
+            panel.innerHTML = '<span class="lp-error">Light pollution unavailable</span>';
         }
     }
 }
@@ -1546,7 +1583,7 @@ async function boot() {
                 document.getElementById("latInput").value  = settings.lat;
                 document.getElementById("lonInput").value  = settings.lon;
                 document.getElementById("location-label").textContent =
-                    '📍 ' + (settings.locationName || settings.lat.toFixed(3) + ', ' + settings.lon.toFixed(3));
+                    (settings.locationName || settings.lat.toFixed(3) + ', ' + settings.lon.toFixed(3));
                 loadLightPollution(settings.lat, settings.lon);
                 await loadAstro(settings.lat, settings.lon);
                 return;
@@ -1580,6 +1617,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <!-- Arc canvas renderer — GPU-accelerated with OffscreenCanvas + rAF hover -->
+<script src="wiki-parser.js"></script>
 <script src="astro-canvas.js"></script>
 </body>
 </html>
