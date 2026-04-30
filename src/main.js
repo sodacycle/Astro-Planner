@@ -408,15 +408,18 @@ function createWindow() {
     height: 900,
     minWidth: 900,
     minHeight: 600,
-    backgroundColor: '#0d1117',
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    frame: false,
+    transparent: true,
+    vibrancy: 'fullscreen-ui',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      enableRemoteModule: false,
       sandbox: false
     },
     title: 'Astro Planner – Seestar',
+    backgroundColor: '#990a1929',
     show: false
   });
 
@@ -452,4 +455,26 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   if (refreshTimer) clearTimeout(refreshTimer);
+});
+
+// ─── Window Controls (from Backup) ───────────────────────────────────
+ipcMain.on('window-minimize', () => {
+  BrowserWindow.getFocusedWindow()?.minimize();
+});
+ipcMain.on('window-maximize', () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+  }
+});
+ipcMain.on('window-close', () => {
+  BrowserWindow.getFocusedWindow()?.close();
+});
+ipcMain.on('window-toggle-dev-tools', () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) win.webContents.toggleDevTools();
 });

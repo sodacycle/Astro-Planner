@@ -35,5 +35,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternal: (url) => ipcRenderer.send('open-external', url),
 
   // Platform info
-  platform: process.platform
+  platform: process.platform,
+
+  // Window controls (from Backup)
+  minimize: () => ipcRenderer.send('window-minimize'),
+  maximize: () => ipcRenderer.send('window-maximize'),
+  close: () => ipcRenderer.send('window-close'),
+  toggleDevTools: () => ipcRenderer.send('window-toggle-dev-tools'),
 });
