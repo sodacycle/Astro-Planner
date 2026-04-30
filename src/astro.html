@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Astro Planner – Seestar-Tuned</title>
     <style>
-        /* CSS Variables from Backup */
+        /* CSS Variables */
         :root {
             --bg: #0a1929;
             --card-bg: rgba(19, 47, 76, 0.6);
@@ -20,20 +20,6 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* CSS Variables from Backup */
-        :root {
-            --bg: #0a1929;
-            --card-bg: rgba(19, 47, 76, 0.6);
-            --text: #ffffff;
-            --text-muted: #b2bac2;
-            --primary: #0d6efd;
-            --primary-hover: #0b5ed7;
-            --border: #265d97;
-            --shadow: 0 2px 8px rgba(0,0,0,0.3);
-            --radius: 8px;
-        }
-
-
         body {
             padding-top: 76px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -41,7 +27,6 @@
             background: rgba(10, 25, 41, 0.6);
             backdrop-filter: blur(80px);
             line-height: 1.5;
-            padding-top: 76px;
             overflow-y: auto;
         }
 
@@ -275,6 +260,7 @@
         }
         .item.clear-slot { cursor: pointer; }
         .item.clear-slot:hover { background: rgba(31, 73, 122, 0.4); border-left: 3px solid #238636; }
+        .item:hover, .summary-item:hover, .popular-item:hover { outline: 1px solid #0d6efd; outline-offset: -1px; }
 
         .rating {
             padding: 3px 8px;
@@ -319,7 +305,7 @@
         }
         .summary-header {
             background: rgba(10, 25, 41, 0.8);
-            padding: 10px 15px;
+            padding: 8px 15px 9px;
             font-size: 0.8rem;
             font-weight: bold;
             color: #a371f7;
@@ -330,22 +316,29 @@
             text-align: center;
         }
         .summary-date { font-weight: bold; margin-bottom: 4px; }
-        .summary-dark { color: var(--text-muted); margin-bottom: 6px; font-size: 0.75rem; }
+        .summary-dark {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            font-style: italic;
+        }
         .summary-item {
             padding: 6px 12px;
             border-bottom: 1px solid rgba(26, 58, 92, 0.6);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
         }
         .summary-item:last-child { border-bottom: none; }
+        .summary-item:hover { outline: 1px solid #0d6efd; outline-offset: -1px; }
         .summary-item a {
             color: #58a6ff;
             text-decoration: none;
-            cursor: pointer;
             font-weight: 500;
+            pointer-events: none;
         }
-        .summary-item a:hover { text-decoration: underline; }
+        .summary-item a.messier { color: #f0883e; }
         .summary-alt { color: var(--text-muted); font-size: 0.75rem; }
         .summary-empty { color: var(--text-muted); padding: 15px; text-align: center; }
 
@@ -376,12 +369,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
         }
         .popular-item:last-child { border-bottom: none; }
+        .popular-item:hover { outline: 1px solid #0d6efd; outline-offset: -1px; }
         .popular-item a {
             color: #58a6ff;
             text-decoration: none;
             font-weight: 500;
+            pointer-events: none;
         }
         .popular-item .messier {
             color: #f0883e;
@@ -445,12 +441,16 @@
 
         h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
         h2 { font-size: 1.25rem; margin-bottom: 0.75rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+        #back-button:hover { background: rgba(31, 73, 122, 0.6); }
+        #sky-arc-canvas { border: 1px solid rgba(26, 58, 92, 0.6); }
+        #wiki-summary::-webkit-scrollbar { width: 6px; }
+        #wiki-summary::-webkit-scrollbar-thumb { background: rgba(26, 58, 92, 0.6); border-radius: 3px; }
     </style>
 </head>
 <body>
 <!-- Titlebar with Window Controls from Backup -->
 <div id="titlebar">
-    <div id="drag-region"><b>Astro Planner v1.6b</b></div>
+    <div id="drag-region"><b>Astro Planner v1.6rc</b></div>
     <div id="window-controls">
         <div class="button" id="min-button">
             <svg width="10" height="1" viewBox="0 0 10 1"><rect fill="white" width="10" height="1"/></svg>
@@ -489,7 +489,7 @@
     <div class="menu-item">
         Help
         <div class="menu-dropdown">
-            <div class="menu-option" onclick="alert('Astro Planner v1.0 - Seestar-Tuned')">About</div>
+            <div class="menu-option" onclick="alert('Astro Planner v1.6rc - Seestar-Tuned')">About</div>
         </div>
     </div>
 </div>
@@ -542,6 +542,36 @@
 <div class="card" style="margin: 16px; display: none;" id="popular-card">
     <h2>📸 Most-Imaged Targets</h2>
     <div id="popular-columns" class="popular-columns"></div>
+</div>
+
+<!-- Object Detail View -->
+<div class="card" style="margin: 16px; display: none;" id="object-detail-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 id="detail-title" style="margin: 0; border: none; padding: 0;">Object Details</h2>
+        <button id="back-button" style="padding: 6px 16px; cursor: pointer; background: rgba(31, 73, 122, 0.4); border: 1px solid rgba(26, 58, 92, 0.6); color: white; border-radius: 4px;">← Back</button>
+    </div>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 300px;">
+             <div style="position: relative; width: 100%;">
+                 <canvas id="sky-arc-canvas" width="800" height="600" style="width: 100%; border-radius: 8px; display: block;"></canvas>
+                 <canvas id="sky-arc-overlay" width="800" height="600" style="position: absolute; top: 0; left: 0; width: 100%; border-radius: 8px; display: block; pointer-events: none;"></canvas>
+             </div>
+            <div id="current-position-info" style="margin-top: 12px; padding: 10px; background: rgba(31, 73, 122, 0.2); border-radius: 6px; font-size: 0.85rem;"></div>
+        </div>
+        <div style="flex: 1; min-width: 300px;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text);">Object Information</h3>
+            <div id="object-info" style="font-size: 0.85rem; line-height: 1.6;">
+                <p><strong>Type:</strong> <span id="info-type"></span></p>
+                <p><strong>Constellation:</strong> <span id="info-const"></span></p>
+                <p><strong>Magnitude:</strong> <span id="info-mag"></span></p>
+                <p><strong>Size:</strong> <span id="info-size"></span></p>
+                <p><strong>Distance:</strong> <span id="info-distance"></span></p>
+            </div>
+            <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--text);">Wikipedia Summary</h3>
+            <div id="wiki-summary" style="font-size: 0.85rem; line-height: 1.6; max-height: 200px; overflow-y: auto; padding: 10px; background: rgba(13, 17, 28, 0.4); border-radius: 6px;"></div>
+            <a id="wiki-link" href="#" target="_blank" style="display: inline-block; margin-top: 10px; font-size: 0.85rem;">Read full article →</a>
+        </div>
+    </div>
 </div>
 
 <div id="toast"></div>
@@ -645,6 +675,133 @@ function altitude(raHours, decDeg, latDeg, lstDeg) {
     return { altDeg: rad2deg(Math.asin(sinAlt)), haDeg };
 }
 
+function calculateSkyArc(raHours, decDeg, latDeg, lonDeg, date) {
+    const arcPoints = [];
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    for (let i = 0; i <= 1440; i += 10) {
+        const currentTime = new Date(startDate.getTime() + i * 60000);
+        const jd = toJulianDate(currentTime);
+        const gmstDeg = gmst(jd);
+        const lstDeg = lst(gmstDeg, lonDeg);
+        const pos = altitude(raHours, decDeg, latDeg, lstDeg);
+        arcPoints.push({ time: currentTime, altDeg: pos.altDeg, haDeg: pos.haDeg });
+    }
+    return arcPoints;
+}
+
+function calculateAzimuth(haDeg, decDeg, latDeg) {
+    const haRad = deg2rad(haDeg);
+    const decRad = deg2rad(decDeg);
+    const latRad = deg2rad(latDeg);
+    const azRad = Math.atan2(Math.sin(haRad), Math.cos(haRad) * Math.sin(latRad) - Math.tan(decRad) * Math.cos(latRad));
+    /* Meeus formula returns azimuth from South; convert to azimuth from North */
+    return normalizeDeg(rad2deg(azRad) + 180);
+}
+
+function calculateRiseSetHA(decDeg, latDeg) {
+    const decRad = deg2rad(decDeg);
+    const latRad = deg2rad(latDeg);
+    const arg = -Math.tan(decRad) * Math.tan(latRad);
+    if (arg < -1) return null; /* Never rises */
+    if (arg > 1) return null;  /* Circumpolar */
+    const haRad = Math.acos(arg);
+    return rad2deg(haRad);
+}
+
+function azimuthToCompass(azDeg) {
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const idx = Math.round(azDeg / 45) % 8;
+    return dirs[(idx + 8) % 8];
+}
+
+/* Arc canvas rendering is handled by astro-canvas.js (loaded at end of body).
+   The module reads window.fullCatalog, window.currentLat, and the math helpers
+   below, and exposes window.drawSkyArc for showObjectDetail to call. */
+
+async function fetchWikipediaInfo(wikiUrl, objectName) {
+    try {
+        let title = '';
+        let cleanUrl = wikiUrl;
+        if (wikiUrl && wikiUrl.includes('search=')) {
+            title = wikiUrl.split('search=')[1].replace(/\+/g, ' ');
+            cleanUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+        } else if (wikiUrl && wikiUrl.includes('wikipedia.org')) {
+            title = wikiUrl.split('/').pop().replace(/_/g, ' ');
+            cleanUrl = wikiUrl;
+        } else {
+            title = objectName.replace(/^(NGC|IC|M)(\d+)$/i, '$1 $2');
+            cleanUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+        }
+        const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+        if (response.ok) {
+            const data = await response.json();
+            return { summary: data.extract || 'No summary available.', fullUrl: data.content_urls?.desktop?.page || cleanUrl };
+        }
+        const searchResponse = await fetch(`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&titles=${encodeURIComponent(title)}&prop=extracts&exintro=1&explaintext=1`);
+        const searchData = await searchResponse.json();
+        const pages = searchData.query?.pages;
+        if (pages) {
+            const page = Object.values(pages)[0];
+            return { summary: page.extract || 'No summary available.', fullUrl: cleanUrl };
+        }
+    } catch (e) {
+        console.error('Wikipedia fetch error:', e);
+    }
+    return { summary: 'Unable to load Wikipedia information.', fullUrl: wikiUrl || '#' };
+}
+
+function showObjectDetail(objData) {
+    document.getElementById('detail-title').textContent = objData.name;
+    const objectDetailCard = document.getElementById('object-detail-card');
+    const summaryCard = document.getElementById('summary-card');
+    const popularCard = document.getElementById('popular-card');
+    const nightColumns = document.getElementById('night-columns');
+    if (summaryCard) summaryCard.style.display = 'none';
+    if (popularCard) popularCard.style.display = 'none';
+    if (nightColumns) nightColumns.parentElement.style.display = 'none';
+    objectDetailCard.style.display = 'block';
+    const catalogObj = fullCatalog.find(o => o.name === objData.name);
+    if (catalogObj) {
+        document.getElementById('info-type').textContent = catalogObj.object_definition || catalogObj.type || 'N/A';
+        document.getElementById('info-const').textContent = catalogObj.const || 'N/A';
+        document.getElementById('info-mag').textContent = catalogObj.b_mag ?? catalogObj.v_mag ?? 'N/A';
+        document.getElementById('info-size').textContent = catalogObj.majax ? `${catalogObj.majax}' x ${catalogObj.minax || catalogObj.majax}'` : 'N/A';
+        document.getElementById('info-distance').textContent = catalogObj.identifiers?.includes('PGC') ? 'See Wikipedia' : 'N/A';
+    }
+    const raHours = parseRA(objData.ra || (catalogObj && catalogObj.ra));
+    const decDeg = parseDec(objData.dec || (catalogObj && catalogObj.dec));
+    if (raHours !== null && decDeg !== null && currentLat !== null && currentLon !== null) {
+        const arcPoints = calculateSkyArc(raHours, decDeg, currentLat, currentLon, new Date());
+        const now = new Date();
+        const jd = toJulianDate(now);
+        const gmstDeg = gmst(jd);
+        const lstDeg = lst(gmstDeg, currentLon);
+        const currentPos = altitude(raHours, decDeg, currentLat, lstDeg);
+        drawSkyArc('sky-arc-canvas', arcPoints, currentPos.altDeg, objData.name);
+        const altInfo = document.getElementById('current-position-info');
+        const horizonStatus = currentPos.altDeg > 0 ? `Above horizon (${currentPos.altDeg.toFixed(1)}°)` : `Below horizon (${currentPos.altDeg.toFixed(1)}°)`;
+        altInfo.innerHTML = `<strong>Current Position:</strong><br>Altitude: ${currentPos.altDeg.toFixed(1)}°<br>Hour Angle: ${currentPos.haDeg.toFixed(1)}°<br>${horizonStatus}`;
+    }
+    fetchWikipediaInfo(objData.link, objData.name).then(wikiData => {
+        document.getElementById('wiki-summary').textContent = wikiData.summary;
+        document.getElementById('wiki-link').href = wikiData.fullUrl;
+    });
+}
+
+function hideObjectDetail() {
+    const objectDetailCard = document.getElementById('object-detail-card');
+    objectDetailCard.style.display = 'none';
+    const nightColumns = document.getElementById('night-columns');
+    if (nightColumns) nightColumns.parentElement.style.display = '';
+    if (document.getElementById('summary-card').querySelectorAll('.summary-item').length > 0) {
+        document.getElementById('summary-card').style.display = 'block';
+    }
+    if (document.getElementById('popular-card').querySelectorAll('.popular-item').length > 0) {
+        document.getElementById('popular-card').style.display = 'block';
+    }
+}
+
 function transitScore(haDeg) {
     return Math.min(Math.abs(haDeg), 360 - Math.abs(haDeg));
 }
@@ -654,6 +811,12 @@ function altitudeThreshold(hour) {
     if (hour < 2) return 25;
     return 20;
 }
+
+/* Expose math helpers for astro-canvas.js */
+window.parseDec = parseDec;
+window.calculateAzimuth = calculateAzimuth;
+window.azimuthToCompass = azimuthToCompass;
+window.calculateRiseSetHA = calculateRiseSetHA;
 
 // ─── Catalog & filters ─────────────────────────────────────────────────────
 const MAG_LIMIT       = 12.5;
@@ -721,7 +884,12 @@ function resetUI(message = "Loading data…") {
 }
 
 // ─── Location handling ─────────────────────────────────────────────────────
+/* Expose as window properties so astro-canvas.js can read them */
+window.currentLat = null;
+window.currentLon = null;
+window.fullCatalog = [];
 let currentLat = null, currentLon = null;
+let fullCatalog = [];
 
 async function setManualLocation() {
     const lat = parseFloat(document.getElementById("latInput").value);
@@ -739,6 +907,7 @@ async function setManualLocation() {
         return;
     }
     currentLat = lat; currentLon = lon;
+    window.currentLat = lat; window.currentLon = lon;
     if (api) await api.saveLocation(lat, lon, lat.toFixed(3) + ', ' + lon.toFixed(3));
     document.getElementById("location-label").textContent = '📍 ' + lat.toFixed(3) + ', ' + lon.toFixed(3);
     resetUI();
@@ -748,6 +917,7 @@ async function setManualLocation() {
 
 async function clearLocation() {
     currentLat = null; currentLon = null;
+    window.currentLat = null; window.currentLon = null;
     if (api) await api.saveLocation(null, null, null);
     document.getElementById("latInput").value = "";
     document.getElementById("lonInput").value = "";
@@ -755,46 +925,149 @@ async function clearLocation() {
     showToast("Location cleared.", "info");
 }
 
-function retryAutoLocation() {
-    resetUI("Requesting GPS location…");
-    requestGPS();
+/* ── Location acquisition — 3-stage fallback chain ──────────────────────────
+   Stage 1 : OS geolocation (navigator.geolocation)  — 8 s timeout
+   Stage 2 : IP-based geolocation via Electron IPC   — 6 s timeout
+   Stage 3 : Manual input — update status and stop
+   Each stage updates the status bar so the user always knows what is happening.
+   retryAutoLocation() restarts the chain from Stage 1.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+function setLocationStatus(msg) {
+    const status = document.getElementById('status');
+    status.style.display = 'block';
+    status.innerHTML = '<span class="spinner"></span> ' + msg;
+}
+
+function setManualPrompt() {
+    const status = document.getElementById('status');
+    status.style.display = 'block';
+    status.innerHTML = '📍 Automatic location unavailable — enter coordinates above and press <strong>Set Location</strong>.';
+}
+
+function applyLocation(lat, lon, label, source) {
+    currentLat = lat; currentLon = lon;
+    window.currentLat = lat; window.currentLon = lon;
+    document.getElementById('latInput').value  = lat;
+    document.getElementById('lonInput').value  = lon;
+    document.getElementById('location-label').textContent = label;
+    document.getElementById('status').style.display = 'none';
+    if (api) api.saveLocation(lat, lon, source);
+    loadLightPollution(lat, lon);
+    loadAstro(lat, lon);
+}
+
+/* Stage 1 — OS geolocation
+   Checks the Permissions API first so we don't sit on a silent denial.
+   Uses a 8-second hard timeout via Promise.race as the safety net. */
+function tryOSLocation() {
+    return new Promise(function(resolve, reject) {
+        if (!navigator.geolocation) {
+            reject(new Error('geolocation API absent'));
+            return;
+        }
+
+        var timer = setTimeout(function() {
+            reject(new Error('OS location timed out'));
+        }, 8000);
+
+        function doGet() {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) { clearTimeout(timer); resolve(pos); },
+                function(err) { clearTimeout(timer); reject(err); },
+                { timeout: 7500, maximumAge: 60000, enableHighAccuracy: false }
+            );
+        }
+
+        /* If the Permissions API is available, only attempt getCurrentPosition
+           when permission is already granted — avoids an 8 s wait when
+           Electron hasn't surfaced a permission prompt and the call silently hangs. */
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+                if (result.state === 'granted') {
+                    doGet();
+                } else {
+                    clearTimeout(timer);
+                    reject(new Error('geolocation permission not granted (' + result.state + ')'));
+                }
+            }).catch(function() {
+                /* Permissions API unavailable on this platform — try directly */
+                doGet();
+            });
+        } else {
+            doGet();
+        }
+    });
+}
+
+/* Stage 2 — IP geolocation (Electron IPC with renderer-side timeout) */
+function tryIPLocation() {
+    if (!api) return Promise.reject(new Error('no Electron API'));
+    return Promise.race([
+        api.getIPLocation(),
+        new Promise(function(_, reject) {
+            setTimeout(function() { reject(new Error('IP lookup timed out')); }, 6000);
+        })
+    ]);
+}
+
+/* Stage 2 browser fallback — direct HTTP when no Electron API */
+function tryIPLocationBrowser() {
+    return Promise.race([
+        fetch('https://ipwho.is/').then(function(r) { return r.json(); }),
+        new Promise(function(_, reject) {
+            setTimeout(function() { reject(new Error('IP lookup timed out')); }, 6000);
+        })
+    ]).then(function(data) {
+        if (data && data.success && data.latitude && data.longitude) {
+            return { success: true, lat: data.latitude, lon: data.longitude, country: data.country || '' };
+        }
+        return { success: false };
+    });
 }
 
 async function requestGPS() {
-    if (!api) {
-        document.getElementById("status").textContent = "Enter coordinates manually above";
-        return;
-    }
+    /* Stage 1 — OS geolocation */
+    setLocationStatus('Requesting OS location (GPS/Wi-Fi)…');
     try {
-        const pos = await new Promise(function(resolve, reject) {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-        });
-        currentLat = pos.coords.latitude;
-        currentLon = pos.coords.longitude;
-        if (api) api.saveLocation(currentLat, currentLon, 'GPS');
-        document.getElementById("location-label").textContent =
-            '📍 GPS: ' + currentLat.toFixed(3) + ', ' + currentLon.toFixed(3);
-        loadLightPollution(currentLat, currentLon);
-        loadAstro(currentLat, currentLon);
+        const pos = await tryOSLocation();
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        console.log('[AstroPlanner] OS location success:', lat, lon);
+        applyLocation(lat, lon, '📍 GPS: ' + lat.toFixed(3) + ', ' + lon.toFixed(3), 'GPS');
+        return;
     } catch (gpsErr) {
-        console.log('[AstroPlanner] GPS unavailable, trying IP-based location...');
-        try {
-            const ipLoc = await api.getIPLocation();
-            if (ipLoc.success) {
-                currentLat = ipLoc.lat;
-                currentLon = ipLoc.lon;
-                if (api) api.saveLocation(currentLat, currentLon, 'IP: ' + ipLoc.country);
-                document.getElementById("location-label").textContent =
-                    '📍 IP: ' + currentLat.toFixed(3) + ', ' + currentLon.toFixed(3) + ' (' + ipLoc.country + ')';
-                loadLightPollution(currentLat, currentLon);
-                loadAstro(currentLat, currentLon);
-            } else {
-                document.getElementById("status").innerHTML = "GPS unavailable. Enter coordinates manually.";
-            }
-        } catch (ipErr) {
-            document.getElementById("status").innerHTML = "GPS unavailable. Enter coordinates manually.";
-        }
+        console.warn('[AstroPlanner] OS location failed (' + gpsErr.message + '), falling back to IP…');
     }
+
+    /* Stage 2 — IP geolocation */
+    setLocationStatus('GPS unavailable — trying IP-based location…');
+    try {
+        const ipResult = api ? await tryIPLocation() : await tryIPLocationBrowser();
+        if (ipResult && ipResult.success) {
+            const lat = ipResult.lat;
+            const lon = ipResult.lon;
+            const country = ipResult.country || '';
+            console.log('[AstroPlanner] IP location success:', lat, lon, country);
+            applyLocation(
+                lat, lon,
+                '📍 IP: ' + lat.toFixed(3) + ', ' + lon.toFixed(3) + (country ? ' (' + country + ')' : ''),
+                'IP: ' + country
+            );
+            return;
+        }
+        console.warn('[AstroPlanner] IP location returned no data.');
+    } catch (ipErr) {
+        console.warn('[AstroPlanner] IP location failed (' + ipErr.message + '), requesting manual input.');
+    }
+
+    /* Stage 3 — Manual input */
+    setManualPrompt();
+}
+
+function retryAutoLocation() {
+    resetUI('Requesting location…');
+    requestGPS();
 }
 
 async function manualRefreshWeather() {
@@ -815,16 +1088,17 @@ async function loadAstro(lat, lon, forceRefresh = false) {
     try {
         // 1. Catalog
         let OBJECTS, POPULAR_OBJECTS;
-        let fullCatalog;
         if (api) {
             const catResult = await api.loadCatalog();
             if (!catResult.success) throw new Error("Catalog load failed: " + catResult.error);
             fullCatalog = catResult.catalog;
+            window.fullCatalog = fullCatalog;
             OBJECTS = fullCatalog.filter(isSeestarFriendly);
             POPULAR_OBJECTS = fullCatalog.filter(function(o) { return isSeestarFriendly(o) && isPopularTarget(o); });
         } else {
             const res = await fetch('ngc-ic-messier-catalog.json');
             fullCatalog = await res.json();
+            window.fullCatalog = fullCatalog;
             OBJECTS = fullCatalog.filter(isSeestarFriendly);
             POPULAR_OBJECTS = fullCatalog.filter(function(o) { return isSeestarFriendly(o) && isPopularTarget(o); });
         }
@@ -992,7 +1266,7 @@ async function loadAstro(lat, lon, forceRefresh = false) {
 
                 if (isClear && bestObject) {
                     row.style.cursor = 'pointer';
-                    row.addEventListener('click', function() { openLink(bestObject.link); });
+                    row.addEventListener('click', function() { showObjectDetail(bestObject); });
                 }
 
                 row.innerHTML = '<div><div style="font-weight:600; font-size:0.9rem;">' +
@@ -1016,6 +1290,15 @@ async function loadAstro(lat, lon, forceRefresh = false) {
             });
             nightSummary.objects.sort(function(a, b) { return b.maxAlt - a.maxAlt; });
             nightsSummary.push(nightSummary);
+            
+            // Add catalog data (ra, dec) to objects for detail view
+            nightSummary.objects.forEach(function(obj) {
+                const catObj = fullCatalog.find(function(o) { return o.name === obj.name; });
+                if (catObj) {
+                    obj.ra = catObj.ra;
+                    obj.dec = catObj.dec;
+                }
+            });
 
             // Build popular summary for this night
             const nightPopularSummary = { dateLabel: bannerDate, objects: [] };
@@ -1034,6 +1317,15 @@ async function loadAstro(lat, lon, forceRefresh = false) {
             });
             nightPopularSummary.objects.sort(function(a, b) { return b.maxAlt - a.maxAlt; });
             popularSummaries.push(nightPopularSummary);
+            
+            // Add catalog data (ra, dec) to objects for detail view
+            nightPopularSummary.objects.forEach(function(obj) {
+                const catObj = fullCatalog.find(function(o) { return o.name === obj.name; });
+                if (catObj) {
+                    obj.ra = catObj.ra;
+                    obj.dec = catObj.dec;
+                }
+            });
         }
 
     // Summary columns (aligned with night columns)
@@ -1047,15 +1339,17 @@ async function loadAstro(lat, lon, forceRefresh = false) {
             col.className = 'summary-column';
             summaryColumnsEl.appendChild(col);
 
+            /* Sticky header: date label + dark window time on a second line */
             const banner = document.createElement('div');
             banner.className = 'summary-header';
-            banner.textContent = night.dateLabel;
+            const dateDiv = document.createElement('div');
+            dateDiv.textContent = night.dateLabel;
+            const darkDiv = document.createElement('div');
+            darkDiv.className = 'summary-dark';
+            darkDiv.textContent = '🌆 ' + night.dusk + ' → ' + night.dawn + ' 🌅';
+            banner.appendChild(dateDiv);
+            banner.appendChild(darkDiv);
             col.appendChild(banner);
-
-            const darkInfo = document.createElement('div');
-            darkInfo.className = 'summary-dark';
-            darkInfo.textContent = '🌆 ' + night.dusk + ' → ' + night.dawn + ' 🌅';
-            col.appendChild(darkInfo);
 
             if (night.objects.length === 0) {
                 const empty = document.createElement('div');
@@ -1063,18 +1357,27 @@ async function loadAstro(lat, lon, forceRefresh = false) {
                 empty.textContent = 'No objects above horizon';
                 col.appendChild(empty);
             } else {
-                night.objects.slice(0, 10).forEach(function(obj) {
+                night.objects.slice(0, 10).forEach(function(obj, i) {
                     const timeStr = obj.maxTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                     const altR = Math.round(obj.maxAlt);
+
+                    /* Full-row click target — same pattern as popular-item */
                     const row = document.createElement('div');
                     row.className = 'summary-item';
+                    row.addEventListener('click', function() { showObjectDetail(obj); });
+
+                    /* Name: numbered, prefix-stripped, Messier coloured — matching popular */
+                    const isMessier = obj.name.match(/^M\d+$/i) !== null;
+                    const namePrefix = isMessier ? 'M' : '';
                     const link = document.createElement('a');
                     link.href = '#';
-                    link.textContent = obj.name;
-                    link.onclick = function(e) { e.preventDefault(); openLink(obj.link); };
+                    link.textContent = (i + 1) + '. ' + namePrefix + obj.name.replace(/^(NGC|IC|M)/i, '');
+                    if (isMessier) link.classList.add('messier');
+
                     const altSpan = document.createElement('span');
                     altSpan.className = 'summary-alt';
                     altSpan.textContent = '↑' + altR + '° @ ' + timeStr;
+
                     row.appendChild(link);
                     row.appendChild(altSpan);
                     col.appendChild(row);
@@ -1107,16 +1410,18 @@ async function loadAstro(lat, lon, forceRefresh = false) {
                 night.objects.slice(0, 5).forEach(function(obj, i) {
                     const row = document.createElement('div');
                     row.className = 'popular-item';
+                    row.addEventListener('click', function() { showObjectDetail(obj); });
+
                     const link = document.createElement('a');
                     link.href = '#';
                     const namePrefix = obj.isMessier ? 'M' : '';
                     link.textContent = (i + 1) + '. ' + namePrefix + obj.name.replace(/^(NGC|IC|M)/i, '');
                     if (obj.isMessier) link.classList.add('messier');
-                    link.onclick = function(e) { e.preventDefault(); openLink(obj.link); };
-                    const rating = i === 0 ? 'exc' : 'poor';
+
                     const ratingSpan = document.createElement('span');
-                    ratingSpan.className = 'popular-rating ' + rating;
+                    ratingSpan.className = 'popular-rating ' + (i === 0 ? 'exc' : 'poor');
                     ratingSpan.textContent = '↑' + Math.round(obj.maxAlt) + '°';
+
                     row.appendChild(link);
                     row.appendChild(ratingSpan);
                     col.appendChild(row);
@@ -1237,6 +1542,7 @@ async function boot() {
             if (settings.lat && settings.lon) {
                 currentLat = settings.lat;
                 currentLon = settings.lon;
+                window.currentLat = settings.lat; window.currentLon = settings.lon;
                 document.getElementById("latInput").value  = settings.lat;
                 document.getElementById("lonInput").value  = settings.lon;
                 document.getElementById("location-label").textContent =
@@ -1253,29 +1559,27 @@ async function boot() {
     requestGPS();
 }
 
-// Add window control event listeners
-document.getElementById('min-button').addEventListener('click', function() {
-    if (window.electronAPI) window.electronAPI.minimize();
-});
-document.getElementById('max-button').addEventListener('click', function() {
-    if (window.electronAPI) window.electronAPI.maximize();
-});
-document.getElementById('close-button').addEventListener('click', function() {
-    if (window.electronAPI) window.electronAPI.close();
-});
+/* ── Wire up all static UI listeners once the DOM is ready ── */
+document.addEventListener('DOMContentLoaded', function() {
+    /* Back button on object detail view */
+    document.getElementById('back-button').addEventListener('click', hideObjectDetail);
 
-boot();
+    /* Window controls */
+    document.getElementById('min-button').addEventListener('click', function() {
+        if (window.electronAPI) window.electronAPI.minimize();
+    });
+    document.getElementById('max-button').addEventListener('click', function() {
+        if (window.electronAPI) window.electronAPI.maximize();
+    });
+    document.getElementById('close-button').addEventListener('click', function() {
+        if (window.electronAPI) window.electronAPI.close();
+    });
 
-// Add window control event listeners
-document.getElementById('min-button').addEventListener('click', function() {
-    if (window.electronAPI) window.electronAPI.minimize();
-});
-document.getElementById('max-button').addEventListener('click', function() {
-    if (window.electronAPI) window.electronAPI.maximize();
-});
-document.getElementById('close-button').addEventListener('click', function() {
-    if (window.electronAPI) window.electronAPI.close();
+    /* Start the app */
+    boot();
 });
 </script>
+<!-- Arc canvas renderer — GPU-accelerated with OffscreenCanvas + rAF hover -->
+<script src="astro-canvas.js"></script>
 </body>
 </html>

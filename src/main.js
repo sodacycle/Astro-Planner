@@ -11,10 +11,10 @@ const settingsPath   = path.join(userDataPath, 'settings.json');
 const lpcachePath    = path.join(userDataPath, 'lightpollution_cache.json');
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-function fetchJson(url, headers = {}) {
+function fetchJson(url, headers = {}, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith('https') ? https : http;
-    const opts = { timeout: 15000, headers };
+    const opts = { timeout: timeoutMs, headers };
     const req = mod.get(url, opts, res => {
       let data = '';
       res.on('data', chunk => data += chunk);
@@ -360,16 +360,17 @@ function registerIpcHandlers(win) {
   });
 
   // IP-based location for desktop Electron (fallback when GPS unavailable)
+  // Uses a 5-second Node-level timeout; renderer adds its own 6-second race.
   ipcMain.handle('get-ip-location', async () => {
     try {
-      const data = await fetchJson('https://ipwho.is/');
+      const data = await fetchJson('https://ipwho.is/', {}, 5000);
       if (data.success && data.latitude && data.longitude) {
         const lat = data.latitude;
         const lon = data.longitude;
         console.log('[AstroPlanner] IP location:', lat, lon, data.country);
         return { success: true, lat, lon, country: data.country };
       }
-      return { success: false, error: data?.message || "Unable to determine location from IP" };
+      return { success: false, error: data?.message || 'Unable to determine location from IP' };
     } catch (e) {
       return { success: false, error: e.message };
     }
@@ -416,7 +417,9 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       enableRemoteModule: false,
-      sandbox: false
+      sandbox: false,
+      accelerated2dCanvasEnabled: true,
+      backgroundThrottling: false
     },
     title: 'Astro Planner – Seestar',
     backgroundColor: '#990a1929',
@@ -441,6 +444,11 @@ function createWindow() {
 }
 
 // ─── App lifecycle ─────────────────────────────────────────────────────────
+// ─── GPU Acceleration ──────────────────────────────────────────────────────
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+
 app.whenReady().then(() => {
   createWindow();
 
